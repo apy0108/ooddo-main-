@@ -8,6 +8,10 @@ import ResetPassword from './pages/auth/ResetPassword'
 import Users from './pages/admin/Users'
 import EmployeeList from './pages/employees/EmployeeList'
 import EmployeeDetail from './pages/employees/EmployeeDetail'
+import WorkingScheduleList from './pages/workingSchedules/WorkingScheduleList'
+import WorkingScheduleForm from './pages/workingSchedules/WorkingScheduleForm'
+import ContractList from './pages/contracts/ContractList'
+import ContractDetail from './pages/contracts/ContractDetail'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -69,7 +73,15 @@ export default function App() {
               path="contracts"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Contracts" />
+                  <ContractList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="contracts/:id"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                  <ContractDetail />
                 </ProtectedRoute>
               }
             />
@@ -77,7 +89,23 @@ export default function App() {
               path="working-schedules"
               element={
                 <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Working Schedules" />
+                  <WorkingScheduleList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="working-schedules/new"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                  <WorkingScheduleForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="working-schedules/:id"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                  <WorkingScheduleForm />
                 </ProtectedRoute>
               }
             />

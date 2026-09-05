@@ -161,6 +161,7 @@ model WorkingSchedule {
   id           String         @id @default(cuid())
   name         String         @unique
   scheduleType String         @default("FIXED")
+  timezone     String         @default("Asia/Kolkata")
   weeklyHours  Float          @default(0)
   isActive     Boolean        @default(true)
   lines        ScheduleLine[]

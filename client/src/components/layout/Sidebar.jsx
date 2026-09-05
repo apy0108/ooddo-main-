@@ -11,6 +11,8 @@ import {
   UserCheck,
   MoreVertical,
   LogOut,
+  FileText,
+  CalendarClock,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
@@ -93,7 +95,11 @@ export default function Sidebar() {
               <>
                 <NavLink to="/employees" className={navLinkClass}>
                   <Users size={17} />
-                  <span>Employees & Contracts</span>
+                  <span>Employees</span>
+                </NavLink>
+                <NavLink to="/contracts" className={navLinkClass}>
+                  <FileText size={17} />
+                  <span>Contracts</span>
                 </NavLink>
                 <NavLink to="/attendance" className={navLinkClass}>
                   <Clock size={17} />
@@ -123,8 +129,8 @@ export default function Sidebar() {
             </p>
             <div className="space-y-1">
               <NavLink to="/working-schedules" className={navLinkClass}>
-                <Settings size={17} />
-                <span>Configuration</span>
+                <CalendarClock size={17} />
+                <span>Working Schedules</span>
               </NavLink>
 
               {isAdmin && (

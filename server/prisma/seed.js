@@ -202,6 +202,7 @@ async function main() {
   ]
 
   const createdEmployees = []
+  let contractIdx = 0
 
   for (const e of employeeData) {
     const user = await prisma.user.upsert({
@@ -233,12 +234,15 @@ async function main() {
       },
     })
 
+    contractIdx++
+    const contractRef = `CON/2026/${String(contractIdx).padStart(3, '0')}`
+
     // Create ACTIVE contract
     await prisma.contract.upsert({
-      where: { contractRef: `CTR-${e.num}` },
+      where: { contractRef },
       update: {},
       create: {
-        contractRef: `CTR-${e.num}`,
+        contractRef,
         employeeId: employee.id,
         startDate: new Date('2024-01-01'),
         contractType: e.type,
