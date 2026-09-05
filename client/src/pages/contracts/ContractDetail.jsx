@@ -13,8 +13,10 @@ import {
   Ban,
   Save,
   X,
+  Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import useAuthStore from '../../store/authStore'
 import { contractsApi } from '../../api/contracts.api'
 import { formatINR, formatDateShort } from '../../utils/formatters'
 import Modal from '../../components/ui/Modal'
@@ -37,6 +39,8 @@ export default function ContractDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const canDelete = user?.role === 'ADMIN'
 
   const [showActivateModal, setShowActivateModal] = useState(false)
   const [showCancelModal, setShowCancelModal] = useState(false)
@@ -83,6 +87,27 @@ export default function ContractDetail() {
       setShowCancelModal(false)
     },
   })
+
+  // Delete mutation
+  const deleteMutation = useMutation({
+    mutationFn: () => contractsApi.delete(id),
+    onSuccess: () => {
+      toast.success('Contract deleted')
+      queryClient.invalidateQueries({ queryKey: ['contracts'] })
+      queryClient.invalidateQueries({ queryKey: ['employee-counts'] })
+      navigate('/contracts')
+    },
+    onError: (err) => {
+      const msg = err.response?.data?.message || 'Failed to delete contract'
+      toast.error(msg)
+    },
+  })
+
+  const handleDeleteContract = () => {
+    if (window.confirm('Are you sure you want to permanently delete this contract?')) {
+      deleteMutation.mutate()
+    }
+  }
 
   // Update mutation (for editing end date / notes)
   const updateMutation = useMutation({
@@ -279,6 +304,18 @@ export default function ContractDetail() {
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 text-gray-500 text-xs font-semibold rounded-lg">
               Read Only
             </span>
+          )}
+
+          {canDelete && (
+            <button
+              type="button"
+              onClick={handleDeleteContract}
+              disabled={deleteMutation.isPending}
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded-lg transition cursor-pointer disabled:opacity-60"
+            >
+              {deleteMutation.isPending ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+              <span>Delete Contract</span>
+            </button>
           )}
         </div>
       </div>

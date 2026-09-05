@@ -128,8 +128,9 @@ export default function PayrunDetail() {
     try {
       setDownloadingId(payslip.id)
       const res = await downloadPayslip(payslip.id)
-      const empName = `${payslip.employee?.firstName || ''}_${payslip.employee?.lastName || ''}`
-      const filename = `Payslip_${empName}_${payrun?.name || 'period'}.pdf`.replace(/\s+/g, '_')
+      const empName = payslip.employee?.user?.name || `${payslip.employee?.firstName || ''}_${payslip.employee?.lastName || ''}`.trim() || 'Employee'
+      const period = payrun?.name?.replace(/\s+/g, '_') || 'Payslip'
+      const filename = `Payslip_${empName.replace(/\s+/g, '_')}_${period}.pdf`
 
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
       const link = document.createElement('a')

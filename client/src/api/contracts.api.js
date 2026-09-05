@@ -7,4 +7,5 @@ export const contractsApi = {
   update:    (id, data)  => api.put(`/contracts/${id}`, data).then((r) => r.data),
   activate:  (id)        => api.patch(`/contracts/${id}/activate`).then((r) => r.data),
   cancel:    (id)        => api.patch(`/contracts/${id}/cancel`).then((r) => r.data),
+  delete:    (id)        => api.delete(`/contracts/${id}`).then((r) => r.data),
 }

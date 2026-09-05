@@ -102,8 +102,8 @@ async function computeOne(payslipId) {
  * Generate PDF and return download URL
  */
 async function generatePdf(payslipId) {
-  const { publicPath, filePath } = await generatePayslipPdf(payslipId)
-  return { pdfUrl: publicPath, filePath }
+  const filePath = await generatePayslipPdf(payslipId)
+  return { pdfUrl: `/api/payslips/${payslipId}/download`, filePath }
 }
 
 /**

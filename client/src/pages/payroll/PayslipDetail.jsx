@@ -35,7 +35,7 @@ export default function PayslipDetail() {
     user?.role
   )
 
-  const [isPrinting, setIsPrinting] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const {
     data: payslip,
@@ -73,31 +73,42 @@ export default function PayslipDetail() {
     },
   })
 
-  // Print Payslip (PDF generation & download)
-  const handlePrintPayslip = async () => {
+  // Download PDF Payslip
+  const handleDownloadPdf = async () => {
     try {
-      setIsPrinting(true)
-      await generatePdf(id)
+      setDownloading(true)
 
-      const res = await downloadPayslip(id)
-      const empName = `${payslip?.employee?.firstName || ''}_${payslip?.employee?.lastName || ''}`
-      const period = payslip?.payrun?.name || `${dayjs(payslip?.periodStart).format('MMM_YYYY')}`
-      const filename = `Payslip_${empName}_${period}.pdf`.replace(/\s+/g, '_')
+      const response = await downloadPayslip(id)
 
-      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }))
+      const contentType = response.headers?.['content-type']
+      if (contentType && !contentType.includes('application/pdf')) {
+        throw new Error('Server returned invalid file type')
+      }
+
+      const blob = new Blob([response.data], { type: 'application/pdf' })
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
+      const empName = payslip?.employee?.user?.name || `${payslip?.employee?.firstName || ''}_${payslip?.employee?.lastName || ''}`.trim() || 'Employee'
+      const period = payslip?.payrun?.name?.replace(/\s+/g, '_') || dayjs(payslip?.periodStart).format('MMM_YYYY')
+
       link.href = url
-      link.setAttribute('download', filename)
+      link.download = `Payslip_${empName.replace(/\s+/g, '_')}_${period}.pdf`
       document.body.appendChild(link)
       link.click()
-      link.remove()
-      window.URL.revokeObjectURL(url)
 
-      toast.success('PDF generated successfully')
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url)
+        if (document.body.contains(link)) {
+          document.body.removeChild(link)
+        }
+      }, 100)
+
+      toast.success('Payslip downloaded successfully!')
     } catch (err) {
-      toast.error('Failed to generate PDF payslip')
+      console.error('Download error:', err)
+      toast.error('Failed to download payslip. Please try again.')
     } finally {
-      setIsPrinting(false)
+      setDownloading(false)
     }
   }
 
@@ -284,16 +295,21 @@ export default function PayslipDetail() {
           <button
             type="button"
             id="payslip-print-btn"
-            onClick={handlePrintPayslip}
-            disabled={isPrinting}
+            onClick={handleDownloadPdf}
+            disabled={downloading}
             className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold text-white bg-[#205493] hover:bg-[#184275] rounded-lg shadow-2xs transition cursor-pointer disabled:opacity-60"
           >
-            {isPrinting ? (
-              <Loader2 size={14} className="animate-spin" />
+            {downloading ? (
+              <>
+                <Loader2 size={14} className="animate-spin" />
+                <span>Generating PDF...</span>
+              </>
             ) : (
-              <Printer size={14} />
+              <>
+                <Printer size={14} />
+                <span>📄 Print Payslip</span>
+              </>
             )}
-            <span>PRINT PAYSLIP</span>
           </button>
         </div>
       </div>
