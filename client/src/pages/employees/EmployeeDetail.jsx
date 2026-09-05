@@ -15,8 +15,11 @@ import {
   Building2,
   CreditCard,
   User,
+  Trash2,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import api from '../../api/axios'
+import useAuthStore from '../../store/authStore'
 import {
   employeesApi,
   departmentsApi,
@@ -43,6 +46,9 @@ export default function EmployeeDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { user } = useAuthStore()
+  const canDelete = user?.role === 'ADMIN'
+
 
   const [activeTab, setActiveTab] = useState('work')
   const [isEditing, setIsEditing] = useState(false)
@@ -168,6 +174,17 @@ export default function EmployeeDetail() {
     setIsEditing(false)
   }
 
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to permanently delete this employee? This action cannot be undone.')) return
+    try {
+      const res = await api.delete(`/employees/${id}`)
+      toast.success(res.data?.message || 'Employee deleted successfully')
+      navigate('/employees')
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete employee')
+    }
+  }
+
   if (isEmpLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-gray-400">
@@ -189,7 +206,7 @@ export default function EmployeeDetail() {
           className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#205493] text-white text-xs font-semibold rounded-lg shadow-sm hover:bg-[#184275] transition"
         >
           <ArrowLeft size={14} />
-          <span>Back to Employees</span>
+          <span>Back to Directory</span>
         </Link>
       </div>
     )
@@ -290,8 +307,19 @@ export default function EmployeeDetail() {
             </div>
           </div>
 
-          {/* Edit / Save Action Controls */}
+          {/* Edit / Save / Delete Action Controls */}
           <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
+            {canDelete && !isEditing && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-rose-50 border border-rose-200 text-rose-700 hover:bg-rose-100 text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer"
+                title="Permanently Delete Employee (Admin only)"
+              >
+                <Trash2 size={13} />
+                <span>Delete Employee</span>
+              </button>
+            )}
             {!isEditing ? (
               <button
                 type="button"

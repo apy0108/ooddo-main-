@@ -33,12 +33,19 @@ router.post('/:id/compute', isHROrAbove, async (req, res) => {
   return success(res, payslip)
 })
 
-// POST /api/payslips/:id/generate-pdf - generate PDF
+// POST /api/payslips/:id/generate-pdf - generate PDF on demand
 router.post('/:id/generate-pdf', async (req, res) => {
-  // Allow HR/Admin or employee viewing own
-  await payslipService.getOne(req.params.id, req.user.role, req.user.id)
-  const result = await payslipService.generatePdf(req.params.id)
-  return success(res, result)
+  try {
+    const { generatePayslipPdf } = require('../services/payslipPdf.service')
+    const filePath = await generatePayslipPdf(req.params.id)
+    res.json({
+      success: true,
+      message: 'PDF generated successfully',
+      pdfUrl: `/api/payslips/${req.params.id}/download`,
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message })
+  }
 })
 
 // POST /api/payslips/:id/send - send single payslip email [HR, ADMIN]
@@ -55,23 +62,70 @@ router.post('/:id/mark-paid', isHROrAbove, async (req, res) => {
 
 // GET /api/payslips/:id/download - stream PDF file
 router.get('/:id/download', async (req, res) => {
-  const payslip = await payslipService.getOne(req.params.id, req.user.role, req.user.id)
+  try {
+    const payslipId = req.params.id
+    const prisma = require('../config/prisma')
 
-  let filePath = path.join(__dirname, '../../uploads/payslips', `${payslip.id}.pdf`)
-  if (!fs.existsSync(filePath)) {
-    const generated = await payslipService.generatePdf(payslip.id)
-    filePath = generated.filePath
+    // RBAC: employee can only download own payslip
+    if (req.user.role === 'EMPLOYEE') {
+      const employee = await prisma.employee.findFirst({
+        where: { userId: req.user.id }
+      })
+      const payslip = await prisma.payslip.findUnique({
+        where: { id: payslipId }
+      })
+      if (!payslip || payslip.employeeId !== employee?.id) {
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied'
+        })
+      }
+    }
+
+    // Generate PDF if it doesn't exist yet
+    const { generatePayslipPdf } = require('../services/payslipPdf.service')
+    const filePath = await generatePayslipPdf(payslipId)
+
+    // Verify file actually exists
+    if (!fs.existsSync(filePath)) {
+      return res.status(500).json({
+        success: false,
+        message: 'PDF generation failed — file not found'
+      })
+    }
+
+    // Get employee name for filename
+    const payslip = await prisma.payslip.findUnique({
+      where: { id: payslipId },
+      include: {
+        employee: { include: { user: true } },
+        payrun:   true,
+      }
+    })
+
+    const empName = payslip?.employee?.user?.name || `${payslip?.employee?.firstName || ''}_${payslip?.employee?.lastName || ''}`.trim() || 'Employee'
+    const cleanEmpName = empName.replace(/\s+/g, '_')
+    const period = payslip?.payrun?.name?.replace(/\s+/g, '_') || 'Payslip'
+    const filename = `Payslip_${cleanEmpName}_${period}.pdf`
+
+    // Set correct headers and stream file
+    res.setHeader('Content-Type', 'application/pdf')
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`)
+    res.setHeader('Content-Length', fs.statSync(filePath).size)
+
+    const fileStream = fs.createReadStream(filePath)
+    fileStream.on('error', (err) => {
+      console.error('PDF stream error:', err)
+      if (!res.headersSent) {
+        res.status(500).json({ success: false, message: 'Failed to stream PDF' })
+      }
+    })
+    fileStream.pipe(res)
+
+  } catch (err) {
+    console.error('Download error:', err)
+    return res.status(500).json({ success: false, message: err.message })
   }
-
-  const empName = `${payslip.employee.firstName}_${payslip.employee.lastName}`
-  const period = payslip.payrun?.name || dayjs(payslip.periodStart).format('MMM_YYYY')
-  const downloadName = `Payslip_${empName}_${period}.pdf`.replace(/\s+/g, '_')
-
-  res.setHeader('Content-Type', 'application/pdf')
-  res.setHeader('Content-Disposition', `attachment; filename="${downloadName}"`)
-
-  const stream = fs.createReadStream(filePath)
-  stream.pipe(res)
 })
 
 module.exports = router
