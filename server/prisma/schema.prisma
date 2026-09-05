@@ -259,11 +259,13 @@ model Attendance {
   id           String           @id @default(cuid())
   employee     Employee         @relation(fields: [employeeId], references: [id])
   employeeId   String
-  checkIn      DateTime
+  checkIn      DateTime?
   checkOut     DateTime?
   workedHours  Float?
+  overtime     Float?           @default(0)
   status       AttendanceStatus @default(PRESENT)
   reason       String?
+  notes        String?
   isManualEdit Boolean          @default(false)
   editedBy     String?
   editNote     String?

@@ -4,18 +4,11 @@ import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
 import { getInitials } from '../../utils/formatters'
 
+import AttendanceWidget from './AttendanceWidget'
+
 export default function TopNav() {
   const { user } = useAuthStore()
   const [searchQuery, setSearchQuery] = useState('')
-  const [checkInTime, setCheckInTime] = useState('09:12 AM')
-
-  useEffect(() => {
-    // Current formatted time for the check-in pill
-    const now = new Date()
-    setCheckInTime(
-      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    )
-  }, [])
 
   const displayName = user?.employee
     ? `${user.employee.firstName} ${user.employee.lastName}`
@@ -42,11 +35,8 @@ export default function TopNav() {
 
       {/* Right Controls */}
       <div className="flex items-center gap-4">
-        {/* Check-In Status Pill */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-medium">
-          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-          <span>Check-In {checkInTime}</span>
-        </div>
+        {/* Attendance Widget Pill & Popup */}
+        <AttendanceWidget />
 
         {/* Bell Icon */}
         <button

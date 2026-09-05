@@ -199,6 +199,276 @@ async function main() {
       wage: 6800, num: 'EMP-008', hire: '2022-11-01',
       type: 'FULL_TIME', bank: 'ACC-008-KR', bankName: 'SBI'
     },
+    {
+      email: 'aditya.kapoor@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Aditya',
+      lastName: 'Kapoor',
+      dept: eng, pos: swEng, schedule: std40,
+      wage: 6100, num: 'EMP-009', hire: '2023-04-03',
+      type: 'FULL_TIME', bank: 'ACC-009-AK', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'meera.joshi@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Meera',
+      lastName: 'Joshi',
+      dept: eng, pos: srSwEng, schedule: ext45,
+      wage: 7800, num: 'EMP-010', hire: '2022-12-12',
+      type: 'FULL_TIME', bank: 'ACC-010-MJ', bankName: 'ICICI Bank'
+    },
+    {
+      email: 'sanjay.patel@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Sanjay',
+      lastName: 'Patel',
+      dept: finance, pos: finAnalyst, schedule: std40,
+      wage: 6400, num: 'EMP-011', hire: '2023-05-15',
+      type: 'FULL_TIME', bank: 'ACC-011-SP', bankName: 'Axis Bank'
+    },
+    {
+      email: 'nisha.verma@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Nisha',
+      lastName: 'Verma',
+      dept: finance, pos: payrollSpec, schedule: std40,
+      wage: 5900, num: 'EMP-012', hire: '2023-07-01',
+      type: 'FULL_TIME', bank: 'ACC-012-NV', bankName: 'SBI'
+    },
+    {
+      email: 'arvind.menon@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Arvind',
+      lastName: 'Menon',
+      dept: sales, pos: salesRep, schedule: std40,
+      wage: 5600, num: 'EMP-013', hire: '2023-02-14',
+      type: 'FULL_TIME', bank: 'ACC-013-AM', bankName: 'Kotak Bank'
+    },
+    {
+      email: 'pooja.singh@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Pooja',
+      lastName: 'Singh',
+      dept: sales, pos: salesRep, schedule: partTime,
+      wage: 3200, num: 'EMP-014', hire: '2024-01-08',
+      type: 'PART_TIME', bank: null, bankName: null
+    },
+    {
+      email: 'manish.gupta@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Manish',
+      lastName: 'Gupta',
+      dept: ops, pos: opsMgr, schedule: ext45,
+      wage: 7100, num: 'EMP-015', hire: '2022-08-22',
+      type: 'FULL_TIME', bank: 'ACC-015-MG', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'riya.fernandes@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Riya',
+      lastName: 'Fernandes',
+      dept: hr, pos: hrMgr, schedule: std40,
+      wage: 6900, num: 'EMP-016', hire: '2023-06-19',
+      type: 'FULL_TIME', bank: 'ACC-016-RF', bankName: 'ICICI Bank'
+    },
+    {
+      email: 'deepak.malhotra@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Deepak',
+      lastName: 'Malhotra',
+      dept: eng, pos: swEng, schedule: std40,
+      wage: 6200, num: 'EMP-017', hire: '2024-02-05',
+      type: 'FULL_TIME', bank: 'ACC-017-DM', bankName: 'SBI'
+    },
+    {
+      email: 'simran.kaur@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Simran',
+      lastName: 'Kaur',
+      dept: eng, pos: srSwEng, schedule: ext45,
+      wage: 8100, num: 'EMP-018', hire: '2022-05-09',
+      type: 'FULL_TIME', bank: 'ACC-018-SK', bankName: 'Axis Bank'
+    },
+    {
+      email: 'rohit.saxena@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Rohit',
+      lastName: 'Saxena',
+      dept: finance, pos: finAnalyst, schedule: std40,
+      wage: 6700, num: 'EMP-019', hire: '2023-09-11',
+      type: 'FULL_TIME', bank: 'ACC-019-RS', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'tanvi.bose@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Tanvi',
+      lastName: 'Bose',
+      dept: finance, pos: payrollSpec, schedule: std40,
+      wage: 6000, num: 'EMP-020', hire: '2024-03-18',
+      type: 'FULL_TIME', bank: 'ACC-020-TB', bankName: 'SBI'
+    },
+    {
+      email: 'amit.choudhary@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Amit',
+      lastName: 'Choudhary',
+      dept: sales, pos: salesRep, schedule: std40,
+      wage: 5700, num: 'EMP-021', hire: '2023-10-02',
+      type: 'FULL_TIME', bank: null, bankName: null
+    },
+    {
+      email: 'neha.agarwal@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Neha',
+      lastName: 'Agarwal',
+      dept: sales, pos: salesRep, schedule: partTime,
+      wage: 3400, num: 'EMP-022', hire: '2024-04-15',
+      type: 'PART_TIME', bank: 'ACC-022-NA', bankName: 'Kotak Bank'
+    },
+    {
+      email: 'suresh.rao@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Suresh',
+      lastName: 'Rao',
+      dept: ops, pos: opsMgr, schedule: std40,
+      wage: 7000, num: 'EMP-023', hire: '2022-10-17',
+      type: 'FULL_TIME', bank: 'ACC-023-SR', bankName: 'ICICI Bank'
+    },
+    {
+      email: 'aarti.mishra@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Aarti',
+      lastName: 'Mishra',
+      dept: hr, pos: hrMgr, schedule: std40,
+      wage: 7300, num: 'EMP-024', hire: '2023-01-23',
+      type: 'FULL_TIME', bank: 'ACC-024-AM', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'kunal.bhatia@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Kunal',
+      lastName: 'Bhatia',
+      dept: eng, pos: swEng, schedule: std40,
+      wage: 6300, num: 'EMP-025', hire: '2024-05-06',
+      type: 'FULL_TIME', bank: 'ACC-025-KB', bankName: 'Axis Bank'
+    },
+    {
+      email: 'lavanya.krishnan@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Lavanya',
+      lastName: 'Krishnan',
+      dept: eng, pos: srSwEng, schedule: ext45,
+      wage: 8200, num: 'EMP-026', hire: '2022-07-04',
+      type: 'FULL_TIME', bank: 'ACC-026-LK', bankName: 'SBI'
+    },
+    {
+      email: 'tarun.yadav@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Tarun',
+      lastName: 'Yadav',
+      dept: finance, pos: finAnalyst, schedule: std40,
+      wage: 6500, num: 'EMP-027', hire: '2023-11-13',
+      type: 'FULL_TIME', bank: 'ACC-027-TY', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'shruti.das@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Shruti',
+      lastName: 'Das',
+      dept: finance, pos: payrollSpec, schedule: std40,
+      wage: 6100, num: 'EMP-028', hire: '2024-06-10',
+      type: 'FULL_TIME', bank: 'ACC-028-SD', bankName: 'ICICI Bank'
+    },
+    {
+      email: 'mohit.tiwari@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Mohit',
+      lastName: 'Tiwari',
+      dept: sales, pos: salesRep, schedule: std40,
+      wage: 5800, num: 'EMP-029', hire: '2023-08-07',
+      type: 'FULL_TIME', bank: 'ACC-029-MT', bankName: 'SBI'
+    },
+    {
+      email: 'ishita.roy@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Ishita',
+      lastName: 'Roy',
+      dept: sales, pos: salesRep, schedule: partTime,
+      wage: 3500, num: 'EMP-030', hire: '2024-07-01',
+      type: 'PART_TIME', bank: null, bankName: null
+    },
+    {
+      email: 'rakesh.iyer@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Rakesh',
+      lastName: 'Iyer',
+      dept: ops, pos: opsMgr, schedule: ext45,
+      wage: 7200, num: 'EMP-031', hire: '2022-04-25',
+      type: 'FULL_TIME', bank: 'ACC-031-RI', bankName: 'Kotak Bank'
+    },
+    {
+      email: 'sonal.thakur@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Sonal',
+      lastName: 'Thakur',
+      dept: hr, pos: hrMgr, schedule: std40,
+      wage: 7400, num: 'EMP-032', hire: '2023-12-04',
+      type: 'FULL_TIME', bank: 'ACC-032-ST', bankName: 'Axis Bank'
+    },
+    {
+      email: 'varun.sethi@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Varun',
+      lastName: 'Sethi',
+      dept: eng, pos: swEng, schedule: std40,
+      wage: 6050, num: 'EMP-033', hire: '2024-08-12',
+      type: 'FULL_TIME', bank: 'ACC-033-VS', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'payal.naik@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Payal',
+      lastName: 'Naik',
+      dept: eng, pos: srSwEng, schedule: ext45,
+      wage: 8000, num: 'EMP-034', hire: '2022-06-27',
+      type: 'FULL_TIME', bank: 'ACC-034-PN', bankName: 'SBI'
+    },
+    {
+      email: 'harish.jain@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Harish',
+      lastName: 'Jain',
+      dept: finance, pos: finAnalyst, schedule: std40,
+      wage: 6600, num: 'EMP-035', hire: '2023-09-25',
+      type: 'FULL_TIME', bank: 'ACC-035-HJ', bankName: 'ICICI Bank'
+    },
+    {
+      email: 'divya.nambiar@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Divya',
+      lastName: 'Nambiar',
+      dept: finance, pos: payrollSpec, schedule: std40,
+      wage: 6150, num: 'EMP-036', hire: '2024-09-02',
+      type: 'FULL_TIME', bank: 'ACC-036-DN', bankName: 'Axis Bank'
+    },
+    {
+      email: 'sameer.ahmed@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Sameer',
+      lastName: 'Ahmed',
+      dept: sales, pos: salesRep, schedule: std40,
+      wage: 5750, num: 'EMP-037', hire: '2023-05-29',
+      type: 'FULL_TIME', bank: 'ACC-037-SA', bankName: 'HDFC Bank'
+    },
+    {
+      email: 'kriti.pandey@company.com',
+      role: 'EMPLOYEE',
+      firstName: 'Kriti',
+      lastName: 'Pandey',
+      dept: ops, pos: opsMgr, schedule: std40,
+      wage: 6850, num: 'EMP-038', hire: '2024-10-07',
+      type: 'FULL_TIME', bank: null, bankName: null
+    },
   ]
 
   const createdEmployees = []
@@ -340,6 +610,135 @@ async function main() {
     },
   })
   console.log('✅ Time off requests seeded')
+
+  // ── 8b. Attendance Records ──
+  const seedAttendances = [
+    // Today session in progress for EMP-002 (Priya Sharma)
+    {
+      employeeId: createdEmployees[1].id,
+      checkIn: dayjs().hour(9).minute(0).second(0).toDate(),
+      checkOut: null,
+      workedHours: 0,
+      overtime: 0,
+      status: 'PRESENT',
+      notes: 'Checked in via TopNav widget',
+    },
+    // Yesterday - EMP-001 (Arjun Pawar) - Normal day
+    {
+      employeeId: createdEmployees[0].id,
+      checkIn: dayjs().subtract(1, 'day').hour(9).minute(0).toDate(),
+      checkOut: dayjs().subtract(1, 'day').hour(17).minute(0).toDate(),
+      workedHours: 8,
+      overtime: 0,
+      status: 'PRESENT',
+    },
+    // Yesterday - EMP-002 (Priya Sharma) - Overtime day
+    {
+      employeeId: createdEmployees[1].id,
+      checkIn: dayjs().subtract(1, 'day').hour(8).minute(55).toDate(),
+      checkOut: dayjs().subtract(1, 'day').hour(19).minute(30).toDate(),
+      workedHours: 10.58,
+      overtime: 2.58,
+      status: 'PRESENT',
+      notes: 'Quarterly compliance and payroll review preparation',
+    },
+    // Yesterday - EMP-003 (Rohan Mehta) - Late check-in
+    {
+      employeeId: createdEmployees[2].id,
+      checkIn: dayjs().subtract(1, 'day').hour(9).minute(45).toDate(),
+      checkOut: dayjs().subtract(1, 'day').hour(17).minute(15).toDate(),
+      workedHours: 7.5,
+      overtime: 0,
+      status: 'LATE',
+      reason: 'Metro signal failure on blue line',
+    },
+    // Yesterday - EMP-004 (Sneha Kulkarni) - Half day
+    {
+      employeeId: createdEmployees[3].id,
+      checkIn: dayjs().subtract(1, 'day').hour(9).minute(0).toDate(),
+      checkOut: dayjs().subtract(1, 'day').hour(13).minute(0).toDate(),
+      workedHours: 4,
+      overtime: 0,
+      status: 'HALF_DAY',
+      reason: 'Personal errand in afternoon',
+    },
+    // Yesterday - EMP-005 (Vikram Nair - Regular employee) - Normal
+    {
+      employeeId: createdEmployees[4].id,
+      checkIn: dayjs().subtract(1, 'day').hour(9).minute(5).toDate(),
+      checkOut: dayjs().subtract(1, 'day').hour(17).minute(10).toDate(),
+      workedHours: 8.08,
+      overtime: 0.08,
+      status: 'PRESENT',
+    },
+    // Yesterday - EMP-006 (Ananya Iyer) - Absent auto-generated
+    {
+      employeeId: createdEmployees[5].id,
+      checkIn: null,
+      checkOut: null,
+      workedHours: 0,
+      overtime: 0,
+      status: 'ABSENT',
+      notes: `Auto-generated: No check-in recorded for ${dayjs().subtract(1, 'day').format('YYYY-MM-DD')}`,
+    },
+    // 2 days ago - EMP-005 (Vikram Nair) - Manual edit record with audit log
+    {
+      employeeId: createdEmployees[4].id,
+      checkIn: dayjs().subtract(2, 'day').hour(8).minute(30).toDate(),
+      checkOut: dayjs().subtract(2, 'day').hour(18).minute(30).toDate(),
+      workedHours: 10,
+      overtime: 2,
+      status: 'PRESENT',
+      isManualEdit: true,
+      editedBy: 'Priya Sharma (HR_MANAGER)',
+      editNote: 'Corrected punch out failure per swipe card logs',
+      notes: `Biometric scanner glitch at turnstile #2\n[${dayjs().subtract(2, 'day').format('YYYY-MM-DD')} 18:45] Edited by Priya Sharma (HR_MANAGER): Corrected punch out failure per swipe card logs`,
+    },
+    // 2 days ago - EMP-007 (Rahul Desai) - On Leave
+    {
+      employeeId: createdEmployees[6].id,
+      checkIn: null,
+      checkOut: null,
+      workedHours: 0,
+      overtime: 0,
+      status: 'ON_LEAVE',
+      notes: 'Approved medical consultation leave',
+    },
+    // 2 days ago - EMP-008 (Kavita Reddy) - Late
+    {
+      employeeId: createdEmployees[7].id,
+      checkIn: dayjs().subtract(2, 'day').hour(9).minute(35).toDate(),
+      checkOut: dayjs().subtract(2, 'day').hour(17).minute(5).toDate(),
+      workedHours: 7.5,
+      overtime: 0,
+      status: 'LATE',
+      reason: 'Highway traffic bottleneck due to rain',
+    },
+    // 3 days ago - EMP-005 (Vikram Nair) - Standard day
+    {
+      employeeId: createdEmployees[4].id,
+      checkIn: dayjs().subtract(3, 'day').hour(8).minute(58).toDate(),
+      checkOut: dayjs().subtract(3, 'day').hour(17).minute(2).toDate(),
+      workedHours: 8.07,
+      overtime: 0.07,
+      status: 'PRESENT',
+    },
+    // 3 days ago - EMP-003 (Rohan Mehta) - Overtime
+    {
+      employeeId: createdEmployees[2].id,
+      checkIn: dayjs().subtract(3, 'day').hour(8).minute(45).toDate(),
+      checkOut: dayjs().subtract(3, 'day').hour(19).minute(15).toDate(),
+      workedHours: 10.5,
+      overtime: 2.5,
+      status: 'PRESENT',
+      notes: 'Tax audit document compilation',
+    },
+  ]
+
+  for (const att of seedAttendances) {
+    await prisma.attendance.create({ data: att })
+  }
+  console.log('✅ Attendance records seeded')
 
   // ── 9. Completed Payrun for July 2024 ──
   const julyPayrun = await prisma.payrun.create({

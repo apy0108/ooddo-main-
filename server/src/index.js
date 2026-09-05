@@ -43,7 +43,7 @@ app.use('/api/departments', require('./routes/departments.routes'))
 app.use('/api/job-positions', require('./routes/jobPositions.routes'))
 app.use('/api/working-schedules', require('./routes/workingSchedules.routes'))
 app.use('/api/contracts', require('./routes/contracts.routes'))
-// app.use('/api/attendance', require('./routes/attendance.routes'))
+app.use('/api/attendance', require('./routes/attendance.routes'))
 // app.use('/api/time-off-types', require('./routes/timeOffTypes.routes'))
 // app.use('/api/allocations', require('./routes/allocations.routes'))
 // app.use('/api/time-off-requests', require('./routes/timeOffRequests.routes'))
@@ -68,6 +68,8 @@ app.listen(PORT, async () => {
   console.log(`🚀 PeoplePay360 API running on http://localhost:${PORT}`)
   console.log(`📦 Environment: ${process.env.NODE_ENV}`)
   await verifyEmailConnection()
+  const { startAttendanceCron } = require('./jobs/attendance.cron')
+  startAttendanceCron()
 })
 
 module.exports = app

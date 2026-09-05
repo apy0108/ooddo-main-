@@ -12,6 +12,8 @@ import WorkingScheduleList from './pages/workingSchedules/WorkingScheduleList'
 import WorkingScheduleForm from './pages/workingSchedules/WorkingScheduleForm'
 import ContractList from './pages/contracts/ContractList'
 import ContractDetail from './pages/contracts/ContractDetail'
+import AttendanceList from './pages/attendance/AttendanceList'
+import AttendanceDetail from './pages/attendance/AttendanceDetail'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -109,14 +111,8 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="attendance"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Attendance" />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="attendance" element={<AttendanceList />} />
+            <Route path="attendance/:id" element={<AttendanceDetail />} />
             <Route
               path="time-off/types"
               element={

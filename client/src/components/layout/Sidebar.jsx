@@ -91,6 +91,11 @@ export default function Sidebar() {
               <span>Overview</span>
             </NavLink>
 
+            <NavLink to="/attendance" className={navLinkClass}>
+              <Clock size={17} />
+              <span>Attendance</span>
+            </NavLink>
+
             {!isEmployeeOnly && (
               <>
                 <NavLink to="/employees" className={navLinkClass}>
@@ -100,10 +105,6 @@ export default function Sidebar() {
                 <NavLink to="/contracts" className={navLinkClass}>
                   <FileText size={17} />
                   <span>Contracts</span>
-                </NavLink>
-                <NavLink to="/attendance" className={navLinkClass}>
-                  <Clock size={17} />
-                  <span>Attendance</span>
                 </NavLink>
                 <NavLink to="/time-off/requests" className={navLinkClass}>
                   <Calendar size={17} />
