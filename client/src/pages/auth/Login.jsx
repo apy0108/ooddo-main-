@@ -34,15 +34,18 @@ export default function Login() {
 
   const validate = () => {
     const errs = {}
-    if (!email.trim()) {
+    const trimmedEmail = email.trim()
+    const cleanPassword = password.trim().replace(/\s+/g, '')
+
+    if (!trimmedEmail) {
       errs.email = 'Work email is required'
-    } else if (!email.includes('@') || !email.includes('.')) {
+    } else if (!trimmedEmail.includes('@') || !trimmedEmail.includes('.')) {
       errs.email = 'Enter a valid email address'
     }
 
-    if (!password) {
+    if (!cleanPassword) {
       errs.password = 'Password is required'
-    } else if (password.length < 6) {
+    } else if (cleanPassword.length < 6) {
       errs.password = 'Password must be at least 6 characters'
     }
 
@@ -56,9 +59,10 @@ export default function Login() {
 
     setIsLoading(true)
     try {
+      const cleanPassword = password.trim().replace(/\s+/g, '') || password.trim()
       const res = await api.post('/auth/login', {
         email: email.trim(),
-        password,
+        password: cleanPassword,
         rememberMe,
       })
 
