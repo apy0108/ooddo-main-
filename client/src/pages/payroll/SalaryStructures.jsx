@@ -21,7 +21,7 @@ export default function SalaryStructures() {
   const [search, setSearch] = useState('')
 
   const userRole = user?.role || 'EMPLOYEE'
-  const canManage = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER'].includes(userRole)
+  const canManage = ['ADMIN', 'HR_PAYROLL_MANAGER'].includes(userRole)
 
   const { data: structuresRes, isLoading, error } = useQuery({
     queryKey: ['salary-structures'],

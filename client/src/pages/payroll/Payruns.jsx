@@ -22,10 +22,10 @@ export default function Payruns() {
   const navigate = useNavigate()
   const { user } = useAuthStore()
 
-  const isHR = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
+  const isHR = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
     user?.role
   )
-  const canCreate = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER'].includes(user?.role)
+  const canCreate = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(user?.role)
 
   const [search, setSearch] = useState('')
   const [year, setYear] = useState('2026')

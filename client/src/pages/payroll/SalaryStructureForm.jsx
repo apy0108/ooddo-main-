@@ -53,7 +53,7 @@ export default function SalaryStructureForm() {
 
   const isNew = !id || id === 'new'
   const userRole = user?.role || 'EMPLOYEE'
-  const canManage = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER'].includes(userRole)
+  const canManage = ['ADMIN', 'HR_PAYROLL_MANAGER'].includes(userRole)
 
   const [isEditing, setIsEditing] = useState(isNew)
   const [formData, setFormData] = useState({

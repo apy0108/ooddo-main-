@@ -31,7 +31,7 @@ export default function PayslipDetail() {
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
 
-  const isHR = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
+  const isHR = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
     user?.role
   )
 

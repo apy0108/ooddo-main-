@@ -3,7 +3,7 @@ const path = require('path')
 const fs = require('fs')
 const dayjs = require('dayjs')
 const payslipService = require('../services/payslip.service')
-const { authenticateToken, isHROrAbove } = require('../middleware/auth')
+const { authenticateToken, isHROrAbove, isPayrollOrAbove } = require('../middleware/auth')
 const { success } = require('../utils/apiResponse')
 const AppError = require('../utils/AppError')
 
@@ -15,8 +15,8 @@ router.get('/', async (req, res) => {
   return success(res, payslips)
 })
 
-// POST /api/payslips - create standalone payslip [HR, ADMIN]
-router.post('/', isHROrAbove, async (req, res) => {
+// POST /api/payslips - create standalone payslip [HR_PAYROLL_USER, HR_PAYROLL_MANAGER, ADMIN]
+router.post('/', isPayrollOrAbove, async (req, res) => {
   const payslip = await payslipService.createStandalone(req.body, req.user.id)
   return success(res, payslip, 201)
 })
@@ -27,8 +27,8 @@ router.get('/:id', async (req, res) => {
   return success(res, payslip)
 })
 
-// POST /api/payslips/:id/compute - compute single payslip [HR, ADMIN]
-router.post('/:id/compute', isHROrAbove, async (req, res) => {
+// POST /api/payslips/:id/compute - compute single payslip [HR_PAYROLL_USER, HR_PAYROLL_MANAGER, ADMIN]
+router.post('/:id/compute', isPayrollOrAbove, async (req, res) => {
   const payslip = await payslipService.computeOne(req.params.id)
   return success(res, payslip)
 })
@@ -48,14 +48,14 @@ router.post('/:id/generate-pdf', async (req, res) => {
   }
 })
 
-// POST /api/payslips/:id/send - send single payslip email [HR, ADMIN]
-router.post('/:id/send', isHROrAbove, async (req, res) => {
+// POST /api/payslips/:id/send - send single payslip email [HR_PAYROLL_USER, HR_PAYROLL_MANAGER, ADMIN]
+router.post('/:id/send', isPayrollOrAbove, async (req, res) => {
   const result = await payslipService.sendOne(req.params.id)
   return success(res, result)
 })
 
-// POST /api/payslips/:id/mark-paid - mark single payslip as paid [HR, ADMIN]
-router.post('/:id/mark-paid', isHROrAbove, async (req, res) => {
+// POST /api/payslips/:id/mark-paid - mark single payslip as paid [HR_PAYROLL_USER, HR_PAYROLL_MANAGER, ADMIN]
+router.post('/:id/mark-paid', isPayrollOrAbove, async (req, res) => {
   const payslip = await payslipService.markPaid(req.params.id)
   return success(res, payslip)
 })

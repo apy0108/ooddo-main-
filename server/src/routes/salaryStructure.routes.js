@@ -5,7 +5,7 @@ const salaryStructureService = require('../services/salaryStructure.service')
 const salaryRuleService = require('../services/salaryRule.service')
 const salaryCalculationService = require('../services/salaryCalculation.service')
 
-const hrOrAdmin = requireRole('ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER')
+const canWriteStructure = requireRole('ADMIN', 'HR_PAYROLL_MANAGER')
 
 // All routes require auth
 router.use(authenticateToken)
@@ -16,7 +16,7 @@ router.get('/', async (req, res) => {
   res.json({ success: true, data: structures })
 })
 
-router.post('/', hrOrAdmin, async (req, res) => {
+router.post('/', canWriteStructure, async (req, res) => {
   const structure = await salaryStructureService.create(req.body)
   res.status(201).json({ success: true, data: structure, message: 'Salary Structure created successfully' })
 })
@@ -26,12 +26,12 @@ router.get('/:id', async (req, res) => {
   res.json({ success: true, data: structure })
 })
 
-router.put('/:id', hrOrAdmin, async (req, res) => {
+router.put('/:id', canWriteStructure, async (req, res) => {
   const structure = await salaryStructureService.update(req.params.id, req.body)
   res.json({ success: true, data: structure, message: 'Salary Structure updated' })
 })
 
-router.patch('/:id/toggle', hrOrAdmin, async (req, res) => {
+router.patch('/:id/toggle', canWriteStructure, async (req, res) => {
   const structure = await salaryStructureService.toggle(req.params.id)
   res.json({ success: true, data: structure, message: `Salary Structure ${structure.active ? 'activated' : 'deactivated'}` })
 })

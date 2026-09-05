@@ -28,7 +28,7 @@ export default function TopNav() {
   const [payrollOpen, setPayrollOpen] = useState(false)
   const payrollDropdownRef = useRef(null)
 
-  const isHR = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
+  const isPayroll = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
     user?.role
   )
 
@@ -129,76 +129,70 @@ export default function TopNav() {
         </div>
 
         {/* Payroll ▼ Dropdown Menu */}
-        <div className="relative" ref={payrollDropdownRef}>
-          <button
-            type="button"
-            id="topnav-payroll-dropdown-btn"
-            onClick={() => setPayrollOpen(!payrollOpen)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer border border-gray-200/80 bg-gray-50/60 shadow-2xs"
-          >
-            <span>Payroll</span>
-            <ChevronDown
-              size={13}
-              className={`transition-transform duration-150 ${payrollOpen ? 'rotate-180' : ''}`}
-            />
-          </button>
-
-          {payrollOpen && (
-            <div
-              id="topnav-payroll-dropdown-menu"
-              className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2"
+        {isPayroll && (
+          <div className="relative" ref={payrollDropdownRef}>
+            <button
+              type="button"
+              id="topnav-payroll-dropdown-btn"
+              onClick={() => setPayrollOpen(!payrollOpen)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-gray-700 hover:text-gray-900 hover:bg-gray-100 transition cursor-pointer border border-gray-200/80 bg-gray-50/60 shadow-2xs"
             >
-              {isHR && (
-                <>
-                  <Link
-                    to="/payroll/dashboard"
-                    onClick={() => setPayrollOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-                  >
-                    <LayoutDashboard size={14} className="text-[#205493]" />
-                    <span>Dashboard</span>
-                  </Link>
-                  <Link
-                    to="/payroll/payruns"
-                    onClick={() => setPayrollOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-                  >
-                    <Wallet size={14} className="text-[#205493]" />
-                    <span>Payruns</span>
-                  </Link>
-                </>
-              )}
-              <Link
-                to="/payroll/payslips"
-                onClick={() => setPayrollOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+              <span>Payroll</span>
+              <ChevronDown
+                size={13}
+                className={`transition-transform duration-150 ${payrollOpen ? 'rotate-180' : ''}`}
+              />
+            </button>
+
+            {payrollOpen && (
+              <div
+                id="topnav-payroll-dropdown-menu"
+                className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2"
               >
-                <Receipt size={14} className="text-[#205493]" />
-                <span>Payslips</span>
-              </Link>
-              {isHR && (
-                <>
-                  <Link
-                    to="/payroll/structures"
-                    onClick={() => setPayrollOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-                  >
-                    <Layers size={14} className="text-[#205493]" />
-                    <span>Structures</span>
-                  </Link>
-                  <Link
-                    to="/payroll/rules"
-                    onClick={() => setPayrollOpen(false)}
-                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-                  >
-                    <Sliders size={14} className="text-[#205493]" />
-                    <span>Rules</span>
-                  </Link>
-                </>
-              )}
-            </div>
-          )}
-        </div>
+                <Link
+                  to="/payroll/dashboard"
+                  onClick={() => setPayrollOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                >
+                  <LayoutDashboard size={14} className="text-[#205493]" />
+                  <span>Dashboard</span>
+                </Link>
+                <Link
+                  to="/payroll/payruns"
+                  onClick={() => setPayrollOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                >
+                  <Wallet size={14} className="text-[#205493]" />
+                  <span>Payruns</span>
+                </Link>
+                <Link
+                  to="/payroll/payslips"
+                  onClick={() => setPayrollOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                >
+                  <Receipt size={14} className="text-[#205493]" />
+                  <span>Payslips</span>
+                </Link>
+                <Link
+                  to="/payroll/structures"
+                  onClick={() => setPayrollOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                >
+                  <Layers size={14} className="text-[#205493]" />
+                  <span>Structures</span>
+                </Link>
+                <Link
+                  to="/payroll/rules"
+                  onClick={() => setPayrollOpen(false)}
+                  className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                >
+                  <Sliders size={14} className="text-[#205493]" />
+                  <span>Rules</span>
+                </Link>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Right Controls */}

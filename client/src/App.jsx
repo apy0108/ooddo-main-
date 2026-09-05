@@ -146,7 +146,7 @@ export default function App() {
               path="payroll/dashboard"
               element={
                 <ProtectedRoute
-                  allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}
+                  allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}
                   redirectTo="/payroll/payslips"
                 >
                   <PayrollDashboard />
@@ -156,7 +156,7 @@ export default function App() {
             <Route
               path="payroll/structures"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
                   <SalaryStructures />
                 </ProtectedRoute>
               }
@@ -164,7 +164,7 @@ export default function App() {
             <Route
               path="payroll/structures/new"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_MANAGER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER']}>
                   <SalaryStructureForm />
                 </ProtectedRoute>
               }
@@ -172,7 +172,7 @@ export default function App() {
             <Route
               path="payroll/structures/:id"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
                   <SalaryStructureForm />
                 </ProtectedRoute>
               }
@@ -180,7 +180,7 @@ export default function App() {
             <Route
               path="payroll/rules"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
                   <SalaryRules />
                 </ProtectedRoute>
               }
@@ -190,7 +190,7 @@ export default function App() {
             <Route
               path="payroll/payruns"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
                   <Payruns />
                 </ProtectedRoute>
               }
@@ -198,7 +198,7 @@ export default function App() {
             <Route
               path="payroll/payruns/:id"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
                   <PayrunDetail />
                 </ProtectedRoute>
               }
