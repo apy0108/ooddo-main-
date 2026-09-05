@@ -37,7 +37,16 @@ export default function AttendanceWidget() {
 
   useEffect(() => {
     fetchSession()
+    const pollInterval = setInterval(fetchSession, 30000)
+    const handleFocus = () => fetchSession()
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      clearInterval(pollInterval)
+      window.removeEventListener('focus', handleFocus)
+    }
   }, [])
+
 
   // Live timer for active session
   useEffect(() => {

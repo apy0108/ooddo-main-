@@ -331,17 +331,51 @@ const createUser = async (data, requestingUserId) => {
   })
 }
 
+const MANAGEABLE_ROLES = {
+  ADMIN: ['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'EMPLOYEE'],
+
+  HR_MANAGER: ['HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'EMPLOYEE'],
+  HR_PAYROLL_MANAGER: ['HR_PAYROLL_USER', 'EMPLOYEE'],
+  HR_PAYROLL_USER: [],
+  EMPLOYEE: [],
+}
+
+function canManageRole(actorRole, targetRole) {
+  const allowed = MANAGEABLE_ROLES[actorRole] || []
+  return allowed.includes(targetRole)
+}
+
 const updateUser = async (userId, data, requestingUserId) => {
   const requester = await prisma.user.findUnique({ where: { id: requestingUserId } })
-  if (requester.role !== 'ADMIN') throw new AppError('Only admins can update users', 403)
+  if (!requester) throw new AppError('Actor user not found', 401)
 
-  // Prevent self-role-elevation
-  if (userId === requestingUserId && data.role)
-    throw new AppError('You cannot change your own role', 403)
+  const target = await prisma.user.findUnique({ where: { id: userId } })
+  if (!target) throw new AppError('Target user not found', 404)
+
+  // Check 3: cannot change own role or deactivate self
+  if (userId === requestingUserId) {
+    if (data.role !== undefined && data.role !== requester.role) {
+      throw new AppError('You cannot change your own role', 403)
+    }
+    if ((data.isActive !== undefined && !data.isActive) || (data.active !== undefined && !data.active)) {
+      throw new AppError('You cannot disable your own account', 403)
+    }
+  } else {
+    // Check 1: can actor manage target's CURRENT role?
+    if (!canManageRole(requester.role, target.role)) {
+      throw new AppError('You do not have permission to manage this user', 403)
+    }
+
+    // Check 2: if changing role, can actor assign the NEW role?
+    if (data.role && !canManageRole(requester.role, data.role)) {
+      throw new AppError(`You cannot assign the role: ${data.role}`, 403)
+    }
+  }
 
   const updateData = {}
   if (data.role !== undefined) updateData.role = data.role
   if (data.isActive !== undefined) updateData.isActive = data.isActive
+  if (data.active !== undefined) updateData.isActive = data.active
   if (data.employeeId !== undefined) {
     updateData.employeeId = data.employeeId || null
   }
@@ -350,13 +384,35 @@ const updateUser = async (userId, data, requestingUserId) => {
     where: { id: userId },
     data: updateData,
     select: {
-      id: true, email: true, role: true, isActive: true,
-      employee: { select: { id: true, firstName: true, lastName: true } },
+      id: true,
+      email: true,
+      role: true,
+      isActive: true,
+      createdAt: true,
+      employee: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          employeeNumber: true,
+        },
+      },
     },
   })
 }
 
 module.exports = {
-  login, refresh, getMe, forgotPassword, resetPassword,
-  getAllUsers, createUser, updateUser,
+  login,
+  refresh,
+  getMe,
+  forgotPassword,
+  resetPassword,
+  getAllUsers,
+  createUser,
+  updateUser,
+  updateRole: (actorId, targetId, role, active) =>
+    updateUser(targetId, { role, active }, actorId),
+  canManageRole,
+  MANAGEABLE_ROLES,
 }
+

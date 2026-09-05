@@ -1,7 +1,8 @@
 const router = require('express').Router()
 const rateLimit = require('express-rate-limit')
 const ctrl = require('../controllers/auth.controller')
-const { authenticateToken, isAdmin } = require('../middleware/auth')
+const { authenticateToken, isAdmin, requireRole } = require('../middleware/auth')
+const canManageUsers = requireRole('ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER')
 
 const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -21,9 +22,11 @@ router.post('/reset-password', ctrl.resetPassword)
 // Protected
 router.get('/me', authenticateToken, ctrl.me)
 
-// Admin only — User Management
-router.get('/users', authenticateToken, isAdmin, ctrl.getUsers)
+// User Management (Role Hierarchy Enforced in Service)
+router.get('/users', authenticateToken, canManageUsers, ctrl.getUsers)
 router.post('/users', authenticateToken, isAdmin, ctrl.createUser)
-router.put('/users/:id', authenticateToken, isAdmin, ctrl.updateUser)
+router.put('/users/:id', authenticateToken, canManageUsers, ctrl.updateUser)
+router.put('/users/:id/role', authenticateToken, canManageUsers, ctrl.updateUser)
 
 module.exports = router
+

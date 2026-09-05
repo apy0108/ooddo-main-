@@ -17,15 +17,13 @@ import {
   TrendingUp,
   TrendingDown,
   CheckCircle2,
-  AlertCircle,
   Clock,
   Calendar,
   Users,
   Building2,
-  Briefcase,
-  Layers,
   FileText,
   AlertTriangle,
+  Inbox,
 } from 'lucide-react'
 import {
   getFilterOptions,
@@ -47,13 +45,6 @@ export default function PayrollDashboard() {
     company: '',
   })
 
-  // Set default period to current month on mount
-  useEffect(() => {
-    const now = new Date()
-    const defaultPeriod = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-    setFilters((prev) => ({ ...prev, period: defaultPeriod }))
-  }, [])
-
   // ── Queries ──
   const { data: filterOptionsRes } = useQuery({
     queryKey: ['dashboard-filter-options'],
@@ -62,53 +53,98 @@ export default function PayrollDashboard() {
   })
   const filterOptions = filterOptionsRes || {}
 
+  // Auto-set default period to the most recent period available
+  useEffect(() => {
+    if (filterOptions?.periods?.length > 0 && !filters.period) {
+      setFilters((prev) => ({
+        ...prev,
+        period: filterOptions.periods[0].value,
+      }))
+    }
+  }, [filterOptions?.periods, filters.period])
+
   const { data: summary, isLoading: isSummaryLoading } = useQuery({
-    queryKey: ['dashboard-summary', filters],
+    queryKey: [
+      'dashboard-summary',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getSummaryCards(filters),
     select: (res) => res.data?.data || res.data || {},
-    enabled: !!filters.period,
   })
 
   const { data: deptSalary = [], isLoading: isDeptSalaryLoading } = useQuery({
-    queryKey: ['dashboard-dept-salary', filters],
+    queryKey: [
+      'dashboard-dept-salary',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getSalaryByDept(filters),
     select: (res) => res.data?.data || res.data || [],
-    enabled: !!filters.period,
   })
 
   const { data: trend = [], isLoading: isTrendLoading } = useQuery({
-    queryKey: ['dashboard-trend', filters],
+    queryKey: [
+      'dashboard-trend',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getSalaryTrend(filters),
     select: (res) => res.data?.data || res.data || [],
-    enabled: !!filters.period,
   })
 
   const { data: statusData, isLoading: isStatusLoading } = useQuery({
-    queryKey: ['dashboard-status', filters],
+    queryKey: [
+      'dashboard-status',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getPayslipStatus(filters),
     select: (res) => res.data?.data || res.data || {},
-    enabled: !!filters.period,
   })
 
   const { data: attendanceData, isLoading: isAttendanceLoading } = useQuery({
-    queryKey: ['dashboard-attendance', filters],
+    queryKey: [
+      'dashboard-attendance',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getAttendanceOverview(filters),
     select: (res) => res.data?.data || res.data || {},
-    enabled: !!filters.period,
   })
 
   const { data: timeOff = [], isLoading: isTimeOffLoading } = useQuery({
-    queryKey: ['dashboard-timeoff', filters],
+    queryKey: [
+      'dashboard-timeoff',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getTimeOffOverview(filters),
     select: (res) => res.data?.data || res.data || [],
-    enabled: !!filters.period,
   })
 
   const { data: deptOverview = [], isLoading: isDeptOverviewLoading } = useQuery({
-    queryKey: ['dashboard-dept-overview', filters],
+    queryKey: [
+      'dashboard-dept-overview',
+      filters.period,
+      filters.departmentId,
+      filters.employeeType,
+      filters.company,
+    ],
     queryFn: () => getDeptOverview(filters),
     select: (res) => res.data?.data || res.data || [],
-    enabled: !!filters.period,
   })
 
   // Status breakdown calculations
@@ -135,6 +171,8 @@ export default function PayrollDashboard() {
     alerts.duplicateWarnings > 0 ||
     alerts.draftsNotValidated > 0 ||
     alerts.expiringContracts > 0
+
+  const totalDeptSalarySum = deptSalary.reduce((sum, d) => sum + (d.totalSalary || 0), 0)
 
   return (
     <div className="space-y-6 pb-12 font-sans">
@@ -337,9 +375,11 @@ export default function PayrollDashboard() {
               <div className="animate-pulse bg-gray-100 rounded-lg h-full w-full flex items-center justify-center text-xs text-gray-400 font-medium">
                 Loading chart...
               </div>
-            ) : deptSalary.length === 0 ? (
-              <div className="text-xs text-gray-400 text-center py-10">
-                No salary data available for selected period
+            ) : deptSalary.length === 0 || totalDeptSalarySum === 0 ? (
+              <div className="text-center py-8 text-gray-400 flex flex-col items-center">
+                <Inbox size={28} className="text-gray-300 mb-1.5" />
+                <p className="text-xs font-medium text-gray-600">No salary data for this period</p>
+                <p className="text-[11px] text-gray-400 mt-0.5">Compute and validate payslips to see data here.</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
@@ -371,7 +411,7 @@ export default function PayrollDashboard() {
                     <LabelList
                       dataKey="totalSalary"
                       position="top"
-                      formatter={(v) => formatLakh(v)}
+                      formatter={(v) => (v > 0 ? formatLakh(v) : '')}
                       style={{ fontSize: 10, fill: '#374151', fontWeight: 600 }}
                     />
                   </Bar>
@@ -396,8 +436,9 @@ export default function PayrollDashboard() {
                 Loading trend...
               </div>
             ) : trend.length === 0 ? (
-              <div className="text-xs text-gray-400 text-center py-10">
-                No trend data available
+              <div className="text-center py-8 text-gray-400 flex flex-col items-center">
+                <Inbox size={28} className="text-gray-300 mb-1.5" />
+                <p className="text-xs font-medium text-gray-600">No trend data available</p>
               </div>
             ) : (
               <ResponsiveContainer width="100%" height={260}>
@@ -448,7 +489,9 @@ export default function PayrollDashboard() {
               {isStatusLoading ? (
                 <div className="animate-pulse bg-gray-200 rounded h-5 w-full" />
               ) : totalStatusCount === 0 ? (
-                <div className="text-xs text-gray-400 py-1">No payslips in selected period</div>
+                <div className="text-xs text-gray-400 py-1 bg-gray-50 rounded-lg p-2.5 text-center">
+                  No payslips generated for selected period
+                </div>
               ) : (
                 <>
                   <div className="h-5 w-full bg-gray-100 rounded-md overflow-hidden flex shadow-2xs">
@@ -563,8 +606,11 @@ export default function PayrollDashboard() {
               <div className="animate-pulse bg-gray-100 rounded-lg h-full w-full flex items-center justify-center text-xs text-gray-400 font-medium">
                 Loading attendance...
               </div>
-            ) : attendanceData?.chartData?.length === 0 ? (
-              <div className="text-xs text-gray-400">No attendance data</div>
+            ) : (attendanceData?.chartData || []).every((d) => d.count === 0) ? (
+              <div className="text-center py-4 text-gray-400 flex flex-col items-center">
+                <Inbox size={24} className="text-gray-300 mb-1" />
+                <span className="text-xs">No attendance records for this period</span>
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height={150}>
                 <BarChart data={attendanceData?.chartData || []} barSize={36} margin={{ top: 20, right: 10, left: 10, bottom: 0 }}>
@@ -625,7 +671,10 @@ export default function PayrollDashboard() {
                 <div className="animate-pulse bg-gray-200 rounded h-5 w-full" />
               </div>
             ) : timeOff.length === 0 ? (
-              <div className="text-xs text-gray-400 text-center py-8">No time off records</div>
+              <div className="text-center py-6 text-gray-400 flex flex-col items-center">
+                <Inbox size={24} className="text-gray-300 mb-1" />
+                <span className="text-xs">No active leave types configured</span>
+              </div>
             ) : (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
@@ -678,7 +727,10 @@ export default function PayrollDashboard() {
                 <div className="animate-pulse bg-gray-200 rounded h-5 w-full" />
               </div>
             ) : deptOverview.length === 0 ? (
-              <div className="text-xs text-gray-400 text-center py-8">No department data</div>
+              <div className="text-center py-6 text-gray-400 flex flex-col items-center">
+                <Inbox size={24} className="text-gray-300 mb-1" />
+                <span className="text-xs">No department data found</span>
+              </div>
             ) : (
               <table className="w-full text-left text-xs border-collapse">
                 <thead>

@@ -8,9 +8,13 @@ const canManualEditAttendance = requireRole('HR_MANAGER', 'HR_PAYROLL_MANAGER', 
 router.use(authenticateToken)
 
 // Self-service widget routes (accessible to all logged-in employees)
+router.get('/today-session', ctrl.todaySession)
 router.get('/today', ctrl.todaySession)
+router.post('/check-in', ctrl.checkIn)
 router.post('/checkin', ctrl.checkIn)
+router.post('/check-out', ctrl.checkOut)
 router.post('/checkout', ctrl.checkOut)
+
 
 // Attendance listing & detail (EMPLOYEE sees own, HR/Admin sees all)
 router.get('/', ctrl.list)
