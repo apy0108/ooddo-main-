@@ -1,97 +1,79 @@
-import { useLocation } from 'react-router-dom'
-import { Bell, ChevronRight } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Bell, HelpCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import useAuthStore from '../../store/authStore'
 import { getInitials } from '../../utils/formatters'
 
-const routeTitles = {
-  '/dashboard': 'Dashboard',
-  '/employees': 'Employees',
-  '/contracts': 'Contracts',
-  '/working-schedules': 'Working Schedules',
-  '/attendance': 'Attendance',
-  '/time-off/types': 'Time Off Types',
-  '/time-off/allocations': 'Allocations',
-  '/time-off/requests': 'Time Off Requests',
-  '/payroll/salary-structures': 'Salary Structures',
-  '/payroll/salary-rules': 'Salary Rules',
-  '/payroll/payruns': 'Payruns',
-  '/payroll/payruns/new': 'New Payrun',
-  '/payroll/payslips': 'Payslips',
-  '/reports/dashboard': 'Payroll Dashboard',
-  '/users': 'User Management',
-}
-
-const roleBadges = {
-  ADMIN: 'bg-rose-50 text-rose-700 border-rose-200',
-  HR_MANAGER: 'bg-blue-50 text-blue-700 border-blue-200',
-  HR_PAYROLL_MANAGER: 'bg-purple-50 text-purple-700 border-purple-200',
-  HR_PAYROLL_USER: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-  EMPLOYEE: 'bg-gray-100 text-gray-700 border-gray-200',
-}
-
 export default function TopNav() {
-  const location = useLocation()
   const { user } = useAuthStore()
+  const [searchQuery, setSearchQuery] = useState('')
+  const [checkInTime, setCheckInTime] = useState('09:12 AM')
 
-  const title = routeTitles[location.pathname] || 'PeoplePay360'
-
-  const pathParts = location.pathname.split('/').filter(Boolean)
-  const breadcrumb = pathParts.map((part) =>
-    part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' ')
-  )
+  useEffect(() => {
+    // Current formatted time for the check-in pill
+    const now = new Date()
+    setCheckInTime(
+      now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    )
+  }, [])
 
   const displayName = user?.employee
     ? `${user.employee.firstName} ${user.employee.lastName}`
     : user?.email?.split('@')[0] || 'User'
 
-  const role = user?.role || 'EMPLOYEE'
+  const initials = getInitials(displayName) || 'U'
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 z-10">
-      <div>
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 mb-0.5">
-          <span>Home</span>
-          {breadcrumb.map((crumb, idx) => (
-            <span key={crumb} className="flex items-center gap-1.5">
-              <ChevronRight size={12} className="text-gray-400" />
-              <span className={idx === breadcrumb.length - 1 ? 'font-medium text-gray-700' : ''}>
-                {crumb}
-              </span>
-            </span>
-          ))}
-        </div>
-        <h2 className="text-lg font-bold text-gray-900 leading-tight">{title}</h2>
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-7 shrink-0 z-10 font-sans">
+      {/* Search Input Bar */}
+      <div className="relative w-96">
+        <Search
+          size={16}
+          className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+        />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search employees, payroll batches, or tasks..."
+          className="w-full pl-10 pr-4 py-2 bg-gray-50/70 border border-gray-200 rounded-lg text-xs text-gray-800 placeholder-gray-400 outline-none focus:bg-white focus:border-[#205493] focus:ring-1 focus:ring-[#205493]/20 transition"
+        />
       </div>
 
+      {/* Right Controls */}
       <div className="flex items-center gap-4">
-        {/* Notification bell stub */}
+        {/* Check-In Status Pill */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50/80 border border-blue-100 text-blue-700 text-xs font-medium">
+          <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+          <span>Check-In {checkInTime}</span>
+        </div>
+
+        {/* Bell Icon */}
         <button
           type="button"
           onClick={() => toast('No new notifications')}
-          className="p-2 text-gray-400 hover:text-gray-600 rounded-xl hover:bg-gray-100 transition cursor-pointer"
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition cursor-pointer"
           title="Notifications"
         >
           <Bell size={18} />
         </button>
 
-        {/* User info */}
-        <div className="flex items-center gap-3 pl-3 border-l border-gray-200">
-          <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
-            {getInitials(displayName)}
-          </div>
-          <div className="text-left hidden sm:block">
-            <p className="text-xs font-semibold text-gray-900 leading-tight">
-              {displayName}
-            </p>
-            <span
-              className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                roleBadges[role] || 'bg-gray-100 text-gray-700 border-gray-200'
-              }`}
-            >
-              {role.replace(/_/g, ' ')}
-            </span>
-          </div>
+        {/* Help Circle Icon */}
+        <button
+          type="button"
+          onClick={() => toast('PeoplePay360 Support: support@peoplepay360.com')}
+          className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+          title="Help & Support"
+        >
+          <HelpCircle size={18} />
+        </button>
+
+        {/* User Circular Avatar */}
+        <div
+          className="w-8 h-8 rounded-full bg-[#1e4e8c] text-white flex items-center justify-center font-bold text-xs shadow-sm cursor-pointer ml-1"
+          title={displayName}
+        >
+          {initials}
         </div>
       </div>
     </header>

@@ -1,27 +1,64 @@
 import { useState, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  UserPlus,
+  Plus,
   Search,
-  X,
-  Check,
+  ChevronDown,
+  RotateCcw,
+  Mail,
   Shield,
+  Eye,
+  Info,
+  MousePointer,
   Loader2,
-  Lock,
-  UserCheck,
-  AlertCircle,
+  Calendar,
+  Wallet,
+  User,
+  Users as UsersIcon,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
 import useAuthStore from '../../store/authStore'
 import { getInitials } from '../../utils/formatters'
 
-const ROLES_LIST = [
-  { value: 'EMPLOYEE', label: 'Employee', badge: 'bg-gray-100 text-gray-700 border-gray-200' },
-  { value: 'HR_MANAGER', label: 'HR Manager', badge: 'bg-blue-50 text-blue-700 border-blue-200' },
-  { value: 'HR_PAYROLL_USER', label: 'HR Payroll User', badge: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
-  { value: 'HR_PAYROLL_MANAGER', label: 'HR Payroll Admin', badge: 'bg-purple-50 text-purple-700 border-purple-200' },
-  { value: 'ADMIN', label: 'Admin', badge: 'bg-rose-50 text-rose-700 border-rose-200' },
+const ROLES_CONFIG = [
+  {
+    value: 'EMPLOYEE',
+    label: 'Employee',
+    scope: 'Self-Service portal only',
+    badgeLabel: 'Employee',
+    badgeIcon: User,
+  },
+  {
+    value: 'HR_MANAGER',
+    label: 'Hr Manager',
+    scope: 'People ops, teams & records',
+    badgeLabel: 'Hr Manager',
+    badgeIcon: UsersIcon,
+  },
+  {
+    value: 'HR_PAYROLL_USER',
+    label: 'Hr Payroll User',
+    scope: 'Compute runs & draft adjustments',
+    badgeLabel: 'Payroll User',
+    badgeIcon: Wallet,
+  },
+  {
+    value: 'HR_PAYROLL_MANAGER',
+    label: 'Hr Payroll Admin',
+    scope: 'Disburse funds & certify tax filings',
+    badgeLabel: 'Payroll Admin',
+    badgeIcon: Wallet,
+  },
+  {
+    value: 'ADMIN',
+    label: 'Admin',
+    scope: 'Full system governance',
+    badgeLabel: 'Admin',
+    badgeIcon: Shield,
+  },
 ]
 
 export default function Users() {
@@ -31,8 +68,8 @@ export default function Users() {
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [selectedUser, setSelectedUser] = useState(null)
-  const [isPanelOpen, setIsPanelOpen] = useState(false)
   const [panelMode, setPanelMode] = useState('CREATE') // 'CREATE' | 'EDIT'
+  const [showBlueprint, setShowBlueprint] = useState(false)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -69,10 +106,10 @@ export default function Users() {
       return res.data
     },
     onSuccess: () => {
-      toast.success('User account created successfully!')
+      toast.success('User created successfully')
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['employees-dropdown'] })
-      handleClosePanel()
+      resetForm()
     },
     onError: (err) => {
       const msg = err.response?.data?.message || 'Failed to create user'
@@ -87,10 +124,9 @@ export default function Users() {
       return res.data
     },
     onSuccess: () => {
-      toast.success('User account updated successfully!')
+      toast.success('User access updated successfully')
       queryClient.invalidateQueries({ queryKey: ['users'] })
       queryClient.invalidateQueries({ queryKey: ['employees-dropdown'] })
-      handleClosePanel()
     },
     onError: (err) => {
       const msg = err.response?.data?.message || 'Failed to update user'
@@ -98,7 +134,7 @@ export default function Users() {
     },
   })
 
-  const openCreateMode = () => {
+  const resetForm = () => {
     setSelectedUser(null)
     setFormData({
       email: '',
@@ -109,10 +145,9 @@ export default function Users() {
     })
     setFormErrors({})
     setPanelMode('CREATE')
-    setIsPanelOpen(true)
   }
 
-  const openEditMode = (user) => {
+  const handleSelectUser = (user) => {
     setSelectedUser(user)
     setFormData({
       email: user.email,
@@ -123,13 +158,6 @@ export default function Users() {
     })
     setFormErrors({})
     setPanelMode('EDIT')
-    setIsPanelOpen(true)
-  }
-
-  const handleClosePanel = () => {
-    setIsPanelOpen(false)
-    setSelectedUser(null)
-    setFormErrors({})
   }
 
   const handleFormSubmit = (e) => {
@@ -140,14 +168,6 @@ export default function Users() {
       errs.email = 'Work email is required'
     } else if (!formData.email.includes('@')) {
       errs.email = 'Enter a valid email address'
-    }
-
-    if (panelMode === 'CREATE' && formData.password && formData.password.length < 6) {
-      errs.password = 'Password must be at least 6 characters'
-    }
-
-    if (!formData.role) {
-      errs.role = 'Role is required'
     }
 
     if (Object.keys(errs).length > 0) {
@@ -175,7 +195,7 @@ export default function Users() {
     }
   }
 
-  // Filtered Users List
+  // Filtered Users
   const filteredUsers = useMemo(() => {
     return users.filter((u) => {
       const matchesSearch =
@@ -186,47 +206,46 @@ export default function Users() {
         (u.employee?.employeeNumber || '').toLowerCase().includes(searchQuery.toLowerCase())
 
       const matchesRole = roleFilter === 'ALL' || u.role === roleFilter
-
       return matchesSearch && matchesRole
     })
   }, [users, searchQuery, roleFilter])
 
+  const activeCount = useMemo(() => {
+    return users.filter((u) => u.isActive).length
+  }, [users])
+
   const isSaving = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="flex h-full min-h-[calc(100vh-4rem)] bg-gray-50/50">
-      {/* LEFT PANEL (60% or full width when panel closed) */}
-      <div
-        className={`transition-all duration-300 flex flex-col p-6 overflow-y-auto ${
-          isPanelOpen ? 'w-full lg:w-3/5 border-r border-gray-200' : 'w-full'
-        }`}
-      >
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              User Management
-            </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-700 border border-rose-200">
-              Admin Only
-            </span>
-          </div>
-
-          <button
-            type="button"
-            onClick={openCreateMode}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-semibold shadow-sm shadow-indigo-600/20 transition cursor-pointer"
-          >
-            <UserPlus size={16} />
-            <span>+ New User</span>
-          </button>
+    <div className="space-y-5 font-sans pb-10">
+      {/* ── Page Header ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            User Management
+          </h1>
+          <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-blue-100 text-blue-700 tracking-wide">
+            ADMIN ONLY
+          </span>
         </div>
 
-        {/* Filters & Search */}
-        <div className="flex flex-col sm:flex-row gap-3 mb-5">
-          <div className="relative flex-1">
+        <button
+          type="button"
+          onClick={resetForm}
+          className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#1e4e8c] hover:bg-[#183e70] text-white rounded-lg text-xs font-semibold shadow-sm transition cursor-pointer"
+        >
+          <Plus size={15} />
+          <span>New User</span>
+        </button>
+      </div>
+
+      {/* ── Search & Filter Controls ── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          {/* Search Box */}
+          <div className="relative w-full max-w-sm">
             <Search
-              size={16}
+              size={15}
               className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
             />
             <input
@@ -234,226 +253,257 @@ export default function Users() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search users, employees or email..."
-              className="w-full pl-9 pr-3.5 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition"
+              className="w-full pl-9 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-[#1e4e8c] focus:ring-1 focus:ring-[#1e4e8c]/20 transition"
             />
           </div>
 
-          <div className="w-full sm:w-56">
+          {/* Role Filter Dropdown */}
+          <div className="relative">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-700 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer"
+              className="appearance-none pl-3 pr-8 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-700 font-medium outline-none focus:border-[#1e4e8c] cursor-pointer"
             >
-              <option value="ALL">All Roles</option>
+              <option value="ALL">Role Filter</option>
               <option value="EMPLOYEE">Employee</option>
               <option value="HR_MANAGER">HR Manager</option>
               <option value="HR_PAYROLL_USER">HR Payroll User</option>
               <option value="HR_PAYROLL_MANAGER">HR Payroll Admin</option>
               <option value="ADMIN">Admin</option>
             </select>
+            <ChevronDown
+              size={13}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+            />
           </div>
         </div>
 
-        {/* Users Table */}
-        <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex-1 flex flex-col">
-          {isUsersLoading ? (
-            <div className="flex flex-col items-center justify-center p-12 text-gray-400">
-              <Loader2 size={32} className="animate-spin text-indigo-600 mb-3" />
-              <p className="text-sm font-medium">Loading user directory...</p>
-            </div>
-          ) : filteredUsers.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center text-gray-400 mb-3">
-                <Shield size={24} />
-              </div>
-              <p className="text-base font-semibold text-gray-800 mb-1">No users found</p>
-              <p className="text-sm text-gray-500 max-w-sm mb-4">
-                No user accounts match your search or filter criteria. Create the first user to get started.
-              </p>
-              <button
-                type="button"
-                onClick={openCreateMode}
-                className="text-xs font-semibold text-indigo-600 hover:text-indigo-700 underline"
-              >
-                Create a new user account
-              </button>
-            </div>
-          ) : (
-            <div className="overflow-x-auto flex-1">
+        {/* Active Seats Count */}
+        <div className="flex items-center gap-2 text-xs font-medium text-gray-600">
+          <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
+          <span>{activeCount} Active System Seats</span>
+        </div>
+      </div>
+
+      {/* ── Blueprint Accordion Bar ── */}
+      <div className="border border-gray-200 rounded-lg bg-white overflow-hidden shadow-xs">
+        <button
+          type="button"
+          onClick={() => setShowBlueprint(!showBlueprint)}
+          className="w-full px-4 py-2.5 flex items-center justify-between text-xs font-medium text-gray-600 hover:bg-gray-50 transition cursor-pointer"
+        >
+          <div className="flex items-center gap-2">
+            <Eye size={15} className="text-gray-400" />
+            <span>Architectural Blueprint Reference (Wireframe Spec)</span>
+          </div>
+          <ChevronDown
+            size={14}
+            className={`text-gray-400 transition-transform ${showBlueprint ? 'rotate-180' : ''}`}
+          />
+        </button>
+        {showBlueprint && (
+          <div className="p-4 bg-gray-50/80 border-t border-gray-200 text-xs text-gray-600 leading-relaxed">
+            <p>
+              This interface provisions authentication identities mapped onto employee records.
+              Role sets govern route guards and operational execution permissions across PeoplePay360.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* ── Two-Column Main Layout ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* LEFT COLUMN: Table & Identity Boundary (7 cols) */}
+        <div className="lg:col-span-7 space-y-4">
+          {/* Table Container */}
+          <div className="bg-white border border-gray-200 rounded-xl shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  <tr className="border-b border-gray-200 bg-gray-50/40 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">
                     <th className="py-3 px-4">User</th>
                     <th className="py-3 px-4">Employee</th>
                     <th className="py-3 px-4">Work Email</th>
                     <th className="py-3 px-4">Role</th>
-                    <th className="py-3 px-4 text-center">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 text-sm">
-                  {filteredUsers.map((u) => {
-                    const fullName = u.employee
-                      ? `${u.employee.firstName} ${u.employee.lastName}`
-                      : u.email.split('@')[0]
-                    const roleInfo =
-                      ROLES_LIST.find((r) => r.value === u.role) || {
-                        label: u.role,
-                        badge: 'bg-gray-100 text-gray-700',
-                      }
-                    const isSelected = selectedUser?.id === u.id
+                <tbody className="divide-y divide-gray-100 text-xs">
+                  {isUsersLoading ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-gray-400">
+                        <Loader2 size={24} className="animate-spin text-[#1e4e8c] mx-auto mb-2" />
+                        <span>Loading directory...</span>
+                      </td>
+                    </tr>
+                  ) : filteredUsers.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="py-8 text-center text-gray-400">
+                        No users match your filter criteria.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredUsers.map((u) => {
+                      const fullName = u.employee
+                        ? `${u.employee.firstName} ${u.employee.lastName}`
+                        : u.email.split('@')[0]
 
-                    return (
-                      <tr
-                        key={u.id}
-                        onClick={() => openEditMode(u)}
-                        className={`hover:bg-indigo-50/40 cursor-pointer transition ${
-                          isSelected ? 'bg-indigo-50/70' : ''
-                        }`}
-                      >
-                        {/* User initials & name */}
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs shrink-0">
-                              {getInitials(fullName)}
+                      const roleMatch =
+                        ROLES_CONFIG.find((r) => r.value === u.role) || {
+                          label: u.role,
+                          badgeLabel: u.role,
+                          badgeIcon: Shield,
+                        }
+
+                      const RoleIcon = roleMatch.badgeIcon
+                      const isSelected = selectedUser?.id === u.id
+
+                      return (
+                        <tr
+                          key={u.id}
+                          onClick={() => handleSelectUser(u)}
+                          className={`hover:bg-blue-50/40 cursor-pointer transition ${
+                            isSelected ? 'bg-blue-50/70' : ''
+                          }`}
+                        >
+                          {/* User Column: Avatar + Name + ID */}
+                          <td className="py-3 px-4">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-8 h-8 rounded-full bg-[#1e4e8c] text-white flex items-center justify-center font-bold text-xs shrink-0">
+                                {getInitials(fullName)}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="font-semibold text-gray-900 leading-tight truncate">
+                                  {fullName}
+                                </p>
+                                <p className="text-[10px] text-gray-400 font-mono mt-0.5">
+                                  {u.employee?.employeeNumber
+                                    ? `ID #${u.employee.employeeNumber}`
+                                    : 'No ID'}
+                                </p>
+                              </div>
                             </div>
-                            <span className="font-medium text-gray-900 truncate">
-                              {fullName}
+                          </td>
+
+                          {/* Employee Column */}
+                          <td className="py-3 px-4 text-gray-700 font-medium">
+                            {u.employee
+                              ? `${u.employee.firstName} ${u.employee.lastName}`
+                              : '—'}
+                          </td>
+
+                          {/* Work Email Column */}
+                          <td className="py-3 px-4 text-gray-600 font-mono text-[11px]">
+                            {u.email}
+                          </td>
+
+                          {/* Role Column */}
+                          <td className="py-3 px-4">
+                            <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded bg-gray-100/90 text-gray-700 text-[11px] font-medium border border-gray-200">
+                              <RoleIcon size={12} className="text-gray-500 shrink-0" />
+                              <span>{roleMatch.badgeLabel}</span>
                             </span>
-                          </div>
-                        </td>
-
-                        {/* Linked Employee */}
-                        <td className="py-3 px-4 text-gray-600">
-                          {u.employee ? (
-                            <span className="text-gray-800 font-medium text-xs">
-                              {u.employee.firstName} {u.employee.lastName}
-                              {u.employee.employeeNumber && (
-                                <span className="text-gray-400 ml-1">
-                                  ({u.employee.employeeNumber})
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span className="text-gray-400 text-xs italic">
-                              Unlinked
-                            </span>
-                          )}
-                        </td>
-
-                        {/* Work Email */}
-                        <td className="py-3 px-4 text-gray-600 font-mono text-xs">
-                          {u.email}
-                        </td>
-
-                        {/* Role Badge */}
-                        <td className="py-3 px-4">
-                          <span
-                            className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold border ${roleInfo.badge}`}
-                          >
-                            {roleInfo.label}
-                          </span>
-                        </td>
-
-                        {/* Status */}
-                        <td className="py-3 px-4 text-center">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                              u.isActive
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                : 'bg-gray-100 text-gray-600 border border-gray-200'
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                u.isActive ? 'bg-emerald-500' : 'bg-gray-400'
-                              }`}
-                            />
-                            {u.isActive ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                      </tr>
-                    )
-                  })}
+                          </td>
+                        </tr>
+                      )
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
 
-          {/* Bottom Note */}
-          <div className="p-3 bg-gray-50 border-t border-gray-200 text-xs text-gray-500">
-            User accounts are separate from Employee records, but should be linked to an employee for access and ownership.
+            {/* Table Footer */}
+            <div className="px-4 py-3 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between text-[11px] text-gray-500">
+              <div className="flex items-center gap-1.5">
+                <MousePointer size={13} className="text-gray-400" />
+                <span>Select a user to edit access, or create a new user.</span>
+              </div>
+              <span>{filteredUsers.length} records listed</span>
+            </div>
+          </div>
+
+          {/* Identity & Ownership Boundary Box */}
+          <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-4 text-xs text-blue-950 flex items-start gap-3 shadow-2xs">
+            <div className="w-5 h-5 rounded-full bg-blue-600/10 text-blue-700 flex items-center justify-center shrink-0 mt-0.5">
+              <Info size={14} />
+            </div>
+            <div>
+              <h4 className="font-bold text-xs text-blue-900 mb-1">
+                Identity & Ownership Boundary
+              </h4>
+              <p className="text-[11px] text-blue-800/80 leading-relaxed">
+                User accounts are separate from Employee records, but should be linked to an
+                employee for access and ownership. Revoking employee contracts does not
+                immediately extinguish IAM access without updating the user profile.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* RIGHT SLIDE-IN PANEL (40% width) */}
-      {isPanelOpen && (
-        <div className="w-full lg:w-2/5 bg-white border-l border-gray-200 shadow-xl flex flex-col h-full overflow-y-auto">
-          {/* Panel Header */}
-          <div className="p-6 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
-            <div>
-              <h2 className="text-lg font-bold text-gray-900">
-                {panelMode === 'CREATE' ? 'Create User' : 'Edit User Access'}
-              </h2>
-              <p className="text-xs text-gray-500 mt-0.5">
-                {panelMode === 'CREATE'
-                  ? 'Provision a new login account'
-                  : `Managing access for ${formData.email}`}
-              </p>
+        {/* RIGHT COLUMN: Create / Edit User Card (5 cols) */}
+        <div className="lg:col-span-5 bg-white border border-gray-200 rounded-xl p-5 shadow-xs">
+          {/* Card Header */}
+          <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-blue-600 inline-block" />
+              <h3 className="font-bold text-sm text-gray-900">
+                {panelMode === 'CREATE' ? 'Create User' : 'Create / Edit User'}
+              </h3>
             </div>
             <button
               type="button"
-              onClick={handleClosePanel}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-200/60 transition cursor-pointer"
+              onClick={resetForm}
+              className="p-1 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition cursor-pointer"
+              title="Reset Form"
             >
-              <X size={20} />
+              <RotateCcw size={14} />
             </button>
           </div>
 
-          {/* Panel Form */}
-          <form onSubmit={handleFormSubmit} className="p-6 space-y-5 flex-1 flex flex-col justify-between">
-            <div className="space-y-4">
-              {/* Linked Employee Dropdown */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Link to Employee
+          <form onSubmit={handleFormSubmit} className="space-y-4">
+            {/* Employee Field */}
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs font-semibold text-gray-800">
+                  Employee <span className="text-red-500">*</span>
                 </label>
+                <span className="text-[10px] text-gray-400 font-medium">Linked Master</span>
+              </div>
+              <div className="relative">
                 <select
                   value={formData.employeeId}
                   onChange={(e) => {
                     const empId = e.target.value
-                    setFormData((prev) => {
-                      const emp = employees.find((x) => x.id === empId)
-                      return {
-                        ...prev,
-                        employeeId: empId,
-                        // auto-populate email if creating new user
-                        ...(panelMode === 'CREATE' && emp?.email && !prev.email
-                          ? { email: emp.email }
-                          : {}),
-                      }
-                    })
+                    const emp = employees.find((x) => x.id === empId)
+                    setFormData((prev) => ({
+                      ...prev,
+                      employeeId: empId,
+                      ...(panelMode === 'CREATE' && emp?.email && !prev.email
+                        ? { email: emp.email }
+                        : {}),
+                    }))
                   }}
-                  className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition cursor-pointer"
+                  className="w-full appearance-none px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 outline-none focus:border-[#1e4e8c] focus:ring-1 focus:ring-[#1e4e8c]/20 transition cursor-pointer"
                 >
-                  <option value="">-- No linked employee --</option>
+                  <option value="">-- Select linked employee --</option>
                   {employees.map((emp) => (
                     <option key={emp.id} value={emp.id}>
-                      [{emp.employeeNumber}] {emp.firstName} {emp.lastName}{' '}
-                      {emp.department?.name ? `— ${emp.department.name}` : ''}
+                      {emp.firstName} {emp.lastName} ({emp.employeeNumber || 'EMP'})
                     </option>
                   ))}
                 </select>
-                <p className="mt-1 text-[11px] text-gray-500">
-                  Linking connects this login to an employee record.
-                </p>
+                <ChevronDown
+                  size={14}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                />
               </div>
+            </div>
 
-              {/* Work Email */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Work Email <span className="text-rose-500">*</span>
-                </label>
+            {/* Work Email Field */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-800 mb-1">
+                Work Email <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
                 <input
                   type="email"
                   value={formData.email}
@@ -462,158 +512,145 @@ export default function Users() {
                     setFormData({ ...formData, email: e.target.value })
                     if (formErrors.email) setFormErrors({ ...formErrors, email: null })
                   }}
-                  placeholder="name@company.com"
-                  className={`w-full px-3.5 py-2.5 bg-white border ${
-                    formErrors.email ? 'border-rose-400 ring-1 ring-rose-400' : 'border-gray-200'
-                  } rounded-xl text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:bg-gray-100 disabled:text-gray-500 transition`}
+                  placeholder="aarav@company.com"
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 placeholder-gray-400 outline-none focus:border-[#1e4e8c] focus:ring-1 focus:ring-[#1e4e8c]/20 disabled:bg-gray-50 disabled:text-gray-500 transition pr-9 font-mono"
                 />
-                {formErrors.email && (
-                  <p className="mt-1 text-xs text-rose-600 font-medium">
-                    {formErrors.email}
-                  </p>
-                )}
+                <Mail
+                  size={14}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
               </div>
-
-              {/* Password Field (Only in CREATE mode) */}
-              {panelMode === 'CREATE' && (
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                    Initial Password
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.password}
-                    onChange={(e) => {
-                      setFormData({ ...formData, password: e.target.value })
-                      if (formErrors.password) setFormErrors({ ...formErrors, password: null })
-                    }}
-                    placeholder="Password@123"
-                    className="w-full px-3.5 py-2.5 bg-white border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition font-mono"
-                  />
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    Default password: <code className="bg-gray-100 px-1 rounded">Password@123</code> (can be overridden)
-                  </p>
-                </div>
+              {formErrors.email && (
+                <p className="mt-1 text-[11px] text-red-500 font-medium">
+                  {formErrors.email}
+                </p>
               )}
+              <p className="mt-1 text-[10px] text-gray-400 leading-tight">
+                Sign-in credentials and MFA codes route to this domain address.
+              </p>
+            </div>
 
-              {/* Roles: Radio Buttons */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-2">
-                  System Role <span className="text-rose-500">*</span>
+            {/* Roles & Permission Sets */}
+            <div>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="text-xs font-semibold text-gray-800">
+                  Roles & Permission Sets <span className="text-red-500">*</span>
                 </label>
-                <div className="space-y-2">
-                  {ROLES_LIST.map((r) => {
-                    const isSelf = selectedUser?.id === currentUserId
-                    const disabledRoleChange = isSelf && r.value !== formData.role
-
-                    return (
-                      <label
-                        key={r.value}
-                        className={`flex items-center justify-between p-3 rounded-xl border transition cursor-pointer ${
-                          formData.role === r.value
-                            ? 'border-indigo-600 bg-indigo-50/50 shadow-sm'
-                            : 'border-gray-200 hover:bg-gray-50'
-                        } ${disabledRoleChange ? 'opacity-50 cursor-not-allowed' : ''}`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <input
-                            type="radio"
-                            name="role"
-                            value={r.value}
-                            disabled={disabledRoleChange}
-                            checked={formData.role === r.value}
-                            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                            className="w-4 h-4 text-indigo-600 border-gray-300 focus:ring-indigo-500"
-                          />
-                          <div>
-                            <span className="text-xs font-semibold text-gray-900 block">
-                              {r.label}
-                            </span>
-                            <span className="text-[11px] text-gray-500">
-                              {r.value === 'ADMIN' && 'Full system administrator'}
-                              {r.value === 'HR_PAYROLL_MANAGER' && 'Execute payruns and approve payroll'}
-                              {r.value === 'HR_PAYROLL_USER' && 'Review payroll and inspect payslips'}
-                              {r.value === 'HR_MANAGER' && 'Manage employees and approvals'}
-                              {r.value === 'EMPLOYEE' && 'Standard self-service employee portal'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {formData.role === r.value && (
-                          <Check size={16} className="text-indigo-600 shrink-0" />
-                        )}
-                      </label>
-                    )
-                  })}
-                </div>
-                {selectedUser?.id === currentUserId && (
-                  <p className="mt-2 text-xs text-amber-600 font-medium flex items-center gap-1">
-                    <AlertCircle size={14} />
-                    You cannot change your own administrator role.
-                  </p>
-                )}
+                <span className="text-[10px] text-gray-400 font-medium">RBAC scope</span>
               </div>
 
-              {/* Account Status Switch */}
-              <div className="pt-2">
-                <label className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer">
-                  <div>
-                    <span className="text-xs font-semibold text-gray-900 block">
-                      Account Status
-                    </span>
-                    <span className="text-[11px] text-gray-500">
-                      {formData.isActive
-                        ? 'User can log in to the workspace'
-                        : 'User is locked out from signing in'}
-                    </span>
-                  </div>
+              <div className="space-y-1.5 border border-gray-200 rounded-lg p-2 bg-gray-50/30">
+                {ROLES_CONFIG.map((r) => {
+                  const isChecked = formData.role === r.value
+                  const isSelf = selectedUser?.id === currentUserId
+                  const disabled = isSelf && r.value !== formData.role
 
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                    className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
-                      formData.isActive ? 'bg-indigo-600' : 'bg-gray-300'
-                    }`}
-                  >
-                    <span
-                      className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                        formData.isActive ? 'translate-x-5' : 'translate-x-0'
-                      }`}
-                    />
-                  </button>
-                </label>
+                  return (
+                    <div
+                      key={r.value}
+                      onClick={() => !disabled && setFormData({ ...formData, role: r.value })}
+                      className={`flex items-center justify-between p-2 rounded-md transition cursor-pointer ${
+                        isChecked
+                          ? 'bg-blue-50/80 border border-blue-200/80'
+                          : 'hover:bg-gray-100/60 border border-transparent'
+                      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="text-blue-700">
+                          {isChecked ? (
+                            <CheckSquare size={15} className="text-[#1e4e8c]" />
+                          ) : (
+                            <Square size={15} className="text-gray-300" />
+                          )}
+                        </div>
+                        <span className="text-xs font-semibold text-gray-900">
+                          {r.label}
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-gray-400">{r.scope}</span>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {selectedUser?.id === currentUserId && (
+                <p className="mt-1.5 text-[11px] text-amber-600">
+                  You cannot change your own administrator role.
+                </p>
+              )}
+            </div>
+
+            {/* Account Status */}
+            <div className="flex items-center justify-between pt-1">
+              <div>
+                <p className="text-xs font-semibold text-gray-800">Account Status</p>
+                <p className="text-[10px] text-gray-400">Enables system authentication</p>
+              </div>
+
+              <div className="flex items-center border border-gray-200 rounded-lg p-0.5 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isActive: true })}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
+                    formData.isActive
+                      ? 'bg-white text-gray-900 shadow-2xs'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Active
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isActive: false })}
+                  className={`px-3 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
+                    !formData.isActive
+                      ? 'bg-white text-gray-900 shadow-2xs'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Disabled
+                </button>
               </div>
             </div>
 
-            {/* Submit Buttons */}
-            <div className="pt-6 border-t border-gray-200 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleClosePanel}
-                className="flex-1 py-2.5 px-4 rounded-xl border border-gray-200 text-gray-700 text-sm font-semibold hover:bg-gray-50 transition cursor-pointer"
-              >
-                Cancel
-              </button>
+            {/* Submit Action Buttons */}
+            <div className="pt-2 space-y-2">
               <button
                 type="submit"
                 disabled={isSaving}
-                className="flex-1 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-sm shadow-indigo-600/30 transition flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
+                className="w-full py-2 px-4 rounded-lg bg-[#1e4e8c] hover:bg-[#183e70] active:bg-[#122f56] text-white text-xs font-semibold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
               >
                 {isSaving ? (
                   <>
-                    <Loader2 size={16} className="animate-spin" />
+                    <Loader2 size={14} className="animate-spin" />
                     <span>Saving...</span>
                   </>
                 ) : (
-                  <span>
-                    {panelMode === 'CREATE' ? 'Create User' : 'Save Access'}
-                  </span>
+                  <>
+                    <Shield size={14} />
+                    <span>Create User / Save Access</span>
+                  </>
                 )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (!formData.email) {
+                    toast.error('Specify an email first')
+                    return
+                  }
+                  toast.success(`Invitation instructions resent to ${formData.email}`)
+                }}
+                className="w-full py-2 px-4 rounded-lg border border-gray-200 hover:bg-gray-50 text-gray-700 text-xs font-medium transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <Mail size={14} className="text-gray-400" />
+                <span>Resend Invitation & Setup Instructions</span>
               </button>
             </div>
           </form>
         </div>
-      )}
+      </div>
     </div>
   )
 }

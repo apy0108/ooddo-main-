@@ -39,10 +39,10 @@ app.get('/api/health', (req, res) => {
 // ── Routes ──
 app.use('/api/auth', require('./routes/auth.routes'))
 app.use('/api/employees', require('./routes/employees.routes'))
-// app.use('/api/departments', require('./routes/departments.routes'))
-// app.use('/api/job-positions', require('./routes/jobPositions.routes'))
+app.use('/api/departments', require('./routes/departments.routes'))
+app.use('/api/job-positions', require('./routes/jobPositions.routes'))
+app.use('/api/working-schedules', require('./routes/workingSchedules.routes'))
 // app.use('/api/contracts', require('./routes/contracts.routes'))
-// app.use('/api/working-schedules', require('./routes/workingSchedules.routes'))
 // app.use('/api/attendance', require('./routes/attendance.routes'))
 // app.use('/api/time-off-types', require('./routes/timeOffTypes.routes'))
 // app.use('/api/allocations', require('./routes/allocations.routes'))

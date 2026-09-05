@@ -1,6 +1,14 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import {
+  Landmark,
+  Shield,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Loader2,
+  Check,
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
 import useAuthStore from '../../store/authStore'
@@ -19,6 +27,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -50,7 +59,7 @@ export default function Login() {
       const res = await api.post('/auth/login', {
         email: email.trim(),
         password,
-        rememberMe: true,
+        rememberMe,
       })
 
       const { accessToken, user } = res.data.data
@@ -62,7 +71,8 @@ export default function Login() {
       const redirectPath = ROLE_REDIRECTS[user.role] || '/dashboard'
       navigate(redirectPath, { replace: true })
     } catch (err) {
-      const message = err.response?.data?.message || 'Failed to sign in. Please check your credentials.'
+      const message =
+        err.response?.data?.message || 'Failed to sign in. Please check your credentials.'
       toast.error(message)
     } finally {
       setIsLoading(false)
@@ -70,32 +80,46 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0f14] text-zinc-100 flex items-center justify-center p-4 selection:bg-blue-500/30 selection:text-blue-200 font-sans">
-      <div className="w-full max-w-md bg-[#12151c] rounded-2xl border border-zinc-800/80 shadow-2xl overflow-hidden">
-        {/* Card Header Tab */}
-        <div className="px-6 py-4 border-b border-zinc-800/70 bg-[#161a23]">
-          <h2 className="text-sm font-semibold text-zinc-200 tracking-wide">
-            HR Portal
-          </h2>
+    <div className="min-h-screen bg-[#f8fafc] text-gray-800 flex flex-col items-center justify-center p-4 selection:bg-blue-500/20 selection:text-blue-900 font-sans">
+      {/* Top Logo */}
+      <div className="flex items-center gap-2 mb-6">
+        <div className="w-8 h-8 rounded-lg bg-[#205493] flex items-center justify-center text-white shadow-sm">
+          <Landmark size={18} />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-xl font-bold text-gray-900 tracking-tight">PeoplePay</span>
+          <span className="text-[11px] font-semibold bg-gray-200/80 text-gray-600 px-1.5 py-0.5 rounded">
+            360
+          </span>
+        </div>
+      </div>
+
+      {/* Center Card */}
+      <div className="w-full max-w-[440px] bg-white rounded-2xl border border-gray-200/90 shadow-sm overflow-hidden">
+        {/* Card Header Strip */}
+        <div className="px-7 py-3 border-b border-gray-100 bg-gray-50/60 flex items-center justify-between text-[11px]">
+          <div className="flex items-center gap-1.5 text-gray-500 font-semibold tracking-wider">
+            <Shield size={13} className="text-gray-400" />
+            <span>HR ENTERPRISE PORTAL</span>
+          </div>
+          <span className="text-gray-400 font-mono text-[10px]">v4.18.2</span>
         </div>
 
         {/* Card Body */}
         <div className="p-7 sm:p-8">
-          {/* Welcome Text */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
               Welcome back
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Sign in to continue to your workspace.
             </p>
           </div>
 
-          {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             {/* Work Email */}
             <div>
-              <label className="block text-xs text-zinc-300 mb-1.5 font-medium">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
                 Work Email
               </label>
               <input
@@ -105,23 +129,32 @@ export default function Login() {
                   setEmail(e.target.value)
                   if (errors.email) setErrors((prev) => ({ ...prev, email: null }))
                 }}
-                placeholder="name@company.com"
-                className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0e1017] border ${
+                placeholder="s.chen@meridiancorp.com"
+                className={`w-full px-3.5 py-2.5 rounded-lg bg-white border ${
                   errors.email
-                    ? 'border-red-500/80 focus:ring-red-500/30'
-                    : 'border-zinc-800 focus:border-blue-500 focus:ring-blue-500/20'
-                } text-white placeholder-zinc-500 text-sm outline-none transition focus:ring-2`}
+                    ? 'border-red-500 focus:ring-red-500/20'
+                    : 'border-gray-200 focus:border-[#205493] focus:ring-[#205493]/15'
+                } text-gray-900 placeholder-gray-400 text-sm outline-none transition focus:ring-2`}
               />
               {errors.email && (
-                <p className="mt-1 text-xs text-red-400 font-medium">{errors.email}</p>
+                <p className="mt-1 text-xs text-red-500 font-medium">{errors.email}</p>
               )}
             </div>
 
             {/* Password */}
             <div>
-              <label className="block text-xs text-zinc-300 mb-1.5 font-medium">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-xs font-semibold text-gray-700">
+                  Password
+                </label>
+                <Link
+                  to="/forgot-password"
+                  className="text-xs text-[#205493] hover:text-[#184275] hover:underline font-medium transition"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
               <div className="relative">
                 <input
                   type={showPassword ? 'text' : 'password'}
@@ -130,34 +163,38 @@ export default function Login() {
                     setPassword(e.target.value)
                     if (errors.password) setErrors((prev) => ({ ...prev, password: null }))
                   }}
-                  placeholder="••••••••••"
-                  className={`w-full px-3.5 py-2.5 rounded-lg bg-[#0e1017] border pr-10 ${
+                  placeholder="••••••••••••••••"
+                  className={`w-full px-3.5 py-2.5 rounded-lg bg-white border pr-10 ${
                     errors.password
-                      ? 'border-red-500/80 focus:ring-red-500/30'
-                      : 'border-zinc-800 focus:border-blue-500 focus:ring-blue-500/20'
-                  } text-white placeholder-zinc-500 text-sm outline-none transition focus:ring-2`}
+                      ? 'border-red-500 focus:ring-red-500/20'
+                      : 'border-gray-200 focus:border-[#205493] focus:ring-[#205493]/15'
+                  } text-gray-900 placeholder-gray-400 text-sm outline-none transition focus:ring-2`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200 transition cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition cursor-pointer"
                   tabIndex={-1}
                 >
                   {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
               {errors.password && (
-                <p className="mt-1 text-xs text-red-400 font-medium">{errors.password}</p>
+                <p className="mt-1 text-xs text-red-500 font-medium">{errors.password}</p>
               )}
-              {/* Forgot password link below input */}
-              <div className="flex justify-end mt-1.5">
-                <Link
-                  to="/forgot-password"
-                  className="text-xs text-blue-400 hover:text-blue-300 transition font-medium"
-                >
-                  Forgot password?
-                </Link>
-              </div>
+            </div>
+
+            {/* Remember Me */}
+            <div className="flex items-center pt-1">
+              <label className="flex items-center gap-2 cursor-pointer text-xs text-gray-600 font-medium select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-[#205493] focus:ring-[#205493]/30 cursor-pointer"
+                />
+                <span>Remember this device for 30 days</span>
+              </label>
             </div>
 
             {/* Submit Button */}
@@ -165,7 +202,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full py-2.5 px-4 rounded-lg bg-[#4b82f6] hover:bg-[#3b74e8] active:bg-[#2b64d8] text-white text-sm font-semibold shadow-md shadow-blue-500/20 transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer flex items-center justify-center gap-2"
+                className="w-full py-2.5 px-4 rounded-lg bg-[#205493] hover:bg-[#184275] active:bg-[#13345d] text-white text-sm font-semibold shadow-sm transition flex items-center justify-center gap-1.5 disabled:opacity-60 cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -173,25 +210,33 @@ export default function Login() {
                     <span>Signing in...</span>
                   </>
                 ) : (
-                  <span>Sign In</span>
+                  <>
+                    <span>Sign In</span>
+                    <ArrowRight size={15} />
+                  </>
                 )}
               </button>
             </div>
           </form>
 
-          {/* Thin horizontal divider */}
-          <div className="border-t border-zinc-800/80 my-7" />
-
-          {/* Bottom notices */}
-          <div className="space-y-5 text-center">
-            <p className="text-xs text-zinc-400">
-              Accounts are created by an administrator.
-            </p>
-            <p className="text-[11px] sm:text-xs text-zinc-500 leading-relaxed px-2">
-              After sign-in, show only the modules and actions allowed by the user's assigned role.
+          {/* Admin Managed Notice Box */}
+          <div className="mt-5 p-3 rounded-lg bg-gray-50/90 border border-gray-100 text-center">
+            <p className="text-[11px] text-gray-500 leading-normal">
+              Accounts are created and managed by your organization's system administrator.
             </p>
           </div>
         </div>
+      </div>
+
+      {/* Role-Based Access Control Tag & Subtitle */}
+      <div className="mt-6 flex flex-col items-center text-center max-w-sm">
+        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100/90 border border-gray-200/80 text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+          <Shield size={11} className="text-gray-400" />
+          <span>ROLE-BASED ACCESS CONTROL</span>
+        </div>
+        <p className="text-[11px] text-gray-400 mt-2 leading-relaxed">
+          After sign-in, show only the modules and actions allowed by the user's assigned role.
+        </p>
       </div>
     </div>
   )
