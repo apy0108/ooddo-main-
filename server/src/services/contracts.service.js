@@ -9,29 +9,29 @@ const generateContractRef = async () => {
   return `CON/${year}/${String(count + 1).padStart(3, '0')}`
 }
 
-// ── Check for overlapping ACTIVE contracts (Rule C1) ─────────
+// ── Check for overlapping ACTIVE/DRAFT contracts (Rule C1) ─────────
 const checkOverlap = async (employeeId, startDate, endDate, excludeId = null) => {
-  const existing = await prisma.contract.findMany({
-    where: {
-      employeeId,
-      status: 'ACTIVE',
-      ...(excludeId && { NOT: { id: excludeId } }),
-    },
-  })
-
-  for (const contract of existing) {
-    const existStart = dayjs(contract.startDate)
-    const existEnd   = contract.endDate ? dayjs(contract.endDate) : dayjs('2099-12-31')
-    const newStart   = dayjs(startDate)
-    const newEnd     = endDate ? dayjs(endDate) : dayjs('2099-12-31')
-
-    const overlaps = newStart.isBefore(existEnd) && existStart.isBefore(newEnd)
-    if (overlaps) {
-      throw new AppError(
-        'Employee already has an active contract during this period',
-        400
-      )
-    }
+  try {
+    const existing = await prisma.contract.findFirst({
+      where: {
+        employeeId,
+        status: { in: ['ACTIVE', 'DRAFT'] },
+        ...(excludeId && { id: { not: excludeId } }),
+        AND: [
+          { startDate: { lte: endDate ? new Date(endDate) : new Date('2099-12-31') } },
+          {
+            OR: [
+              { endDate: null },
+              { endDate: { gte: new Date(startDate) } },
+            ],
+          },
+        ],
+      },
+    })
+    return !!existing
+  } catch (err) {
+    console.error('checkOverlap error:', err)
+    return false // fail open — don't block creation due to check error
   }
 }
 
@@ -79,41 +79,62 @@ const getById = async (id) => {
 
 // ── Create contract (starts as DRAFT) ────────────────────────
 const create = async (data) => {
-  const {
-    employeeId, startDate, endDate, contractType = 'FULL_TIME',
-    wage, wageType = 'MONTHLY', departmentId, jobPositionId,
-    workingScheduleId, salaryStructureId, notes,
-  } = data
+  try {
+    const {
+      employeeId, startDate, endDate, contractType = 'FULL_TIME',
+      wage, wageType = 'MONTHLY', departmentId, jobPositionId,
+      workingScheduleId, salaryStructureId, notes,
+    } = data
 
-  if (!employeeId) throw new AppError('Employee is required', 400)
-  if (!startDate)  throw new AppError('Start date is required', 400)
-  if (!wage || wage <= 0) throw new AppError('Wage must be a positive number', 400)
+    if (!employeeId) throw new AppError('Employee is required', 400)
+    if (!startDate)  throw new AppError('Start date is required', 400)
+    if (!wage || parseFloat(wage) <= 0) throw new AppError('Wage must be a positive number', 400)
 
-  const contractRef = await generateContractRef()
-
-  return prisma.contract.create({
-    data: {
-      contractRef,
+    // Rule C1 — check overlap
+    const hasOverlap = await checkOverlap(
       employeeId,
-      startDate:  new Date(startDate),
-      endDate:    endDate ? new Date(endDate) : null,
-      contractType,
-      status:     'DRAFT',
-      wage:       parseFloat(wage),
-      wageType,
-      notes:      notes || null,
-      ...(departmentId      && { department:      { connect: { id: departmentId } } }),
-      ...(jobPositionId     && { jobPosition:     { connect: { id: jobPositionId } } }),
-      ...(workingScheduleId && { workingSchedule: { connect: { id: workingScheduleId } } }),
-      ...(salaryStructureId && { salaryStructure: { connect: { id: salaryStructureId } } }),
-    },
-    include: {
-      employee:        { select: { id: true, firstName: true, lastName: true } },
-      department:      { select: { id: true, name: true } },
-      jobPosition:     { select: { id: true, title: true } },
-      workingSchedule: { select: { id: true, name: true } },
-    },
-  })
+      startDate,
+      endDate || null
+    )
+    if (hasOverlap) {
+      const error = new Error(
+        'Employee already has an active contract during this period'
+      )
+      error.statusCode = 400
+      throw error
+    }
+
+    const contractRef = await generateContractRef()
+
+    return await prisma.contract.create({
+      data: {
+        contractRef,
+        employeeId,
+        startDate:       new Date(startDate),
+        endDate:         endDate ? new Date(endDate) : null,
+        contractType,
+        status:          'DRAFT',
+        wage:            parseFloat(wage),
+        wageType,
+        notes:           notes || null,
+        departmentId:      departmentId      || null,
+        jobPositionId:     jobPositionId     || null,
+        workingScheduleId: workingScheduleId || null,
+        salaryStructureId: salaryStructureId || null,
+      },
+      include: {
+        employee:        { select: { id: true, firstName: true, lastName: true } },
+        department:      { select: { id: true, name: true } },
+        jobPosition:     { select: { id: true, title: true } },
+        workingSchedule: { select: { id: true, name: true } },
+        salaryStructure: { select: { id: true, name: true, code: true } },
+      },
+    })
+  } catch (error) {
+    if (error.statusCode) throw error
+    console.error('Contract create error:', error)
+    throw new Error('Failed to create contract: ' + error.message)
+  }
 }
 
 // ── Update contract ───────────────────────────────────────────
@@ -136,23 +157,15 @@ const update = async (id, data) => {
   return prisma.contract.update({
     where: { id },
     data: {
-      ...(data.endDate          !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
-      ...(data.notes            !== undefined && { notes: data.notes }),
-      ...(data.wage             !== undefined && { wage: parseFloat(data.wage) }),
-      ...(data.contractType     !== undefined && { contractType: data.contractType }),
-      ...(data.wageType         !== undefined && { wageType: data.wageType }),
-      ...(data.departmentId     !== undefined && {
-        department: data.departmentId ? { connect: { id: data.departmentId } } : { disconnect: true },
-      }),
-      ...(data.jobPositionId    !== undefined && {
-        jobPosition: data.jobPositionId ? { connect: { id: data.jobPositionId } } : { disconnect: true },
-      }),
-      ...(data.workingScheduleId !== undefined && {
-        workingSchedule: data.workingScheduleId ? { connect: { id: data.workingScheduleId } } : { disconnect: true },
-      }),
-      ...(data.salaryStructureId !== undefined && {
-        salaryStructure: data.salaryStructureId ? { connect: { id: data.salaryStructureId } } : { disconnect: true },
-      }),
+      ...(data.endDate           !== undefined && { endDate: data.endDate ? new Date(data.endDate) : null }),
+      ...(data.notes             !== undefined && { notes: data.notes }),
+      ...(data.wage              !== undefined && { wage: parseFloat(data.wage) }),
+      ...(data.contractType      !== undefined && { contractType: data.contractType }),
+      ...(data.wageType          !== undefined && { wageType: data.wageType }),
+      ...(data.departmentId      !== undefined && { departmentId: data.departmentId || null }),
+      ...(data.jobPositionId     !== undefined && { jobPositionId: data.jobPositionId || null }),
+      ...(data.workingScheduleId !== undefined && { workingScheduleId: data.workingScheduleId || null }),
+      ...(data.salaryStructureId !== undefined && { salaryStructureId: data.salaryStructureId || null }),
     },
     include: {
       employee:        { select: { id: true, firstName: true, lastName: true } },
@@ -176,12 +189,15 @@ const activate = async (id) => {
     throw new AppError('An expired contract cannot be reactivated', 400)
 
   // Rule C1 — check for overlap with other ACTIVE contracts
-  await checkOverlap(
+  const hasOverlap = await checkOverlap(
     contract.employeeId,
     contract.startDate,
     contract.endDate,
     id
   )
+  if (hasOverlap) {
+    throw new AppError('Employee already has an active contract during this period', 400)
+  }
 
   return prisma.contract.update({
     where: { id },

@@ -24,6 +24,10 @@ import TimeOffRequestForm from './pages/timeOff/TimeOffRequestForm'
 import SalaryStructures from './pages/payroll/SalaryStructures'
 import SalaryStructureForm from './pages/payroll/SalaryStructureForm'
 import SalaryRules from './pages/payroll/SalaryRules'
+import Payruns from './pages/payroll/Payruns'
+import PayrunDetail from './pages/payroll/PayrunDetail'
+import Payslips from './pages/payroll/Payslips'
+import PayslipDetail from './pages/payroll/PayslipDetail'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -181,42 +185,26 @@ export default function App() {
             <Route
               path="payroll/payruns"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Payruns" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="payroll/payruns/new"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER']}>
-                  <ComingSoon title="New Payrun" />
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                  <Payruns />
                 </ProtectedRoute>
               }
             />
             <Route
               path="payroll/payruns/:id"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Payrun Detail" />
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
+                  <PayrunDetail />
                 </ProtectedRoute>
               }
             />
             <Route
               path="payroll/payslips"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Payslips" />
-                </ProtectedRoute>
-              }
+              element={<Payslips />}
             />
             <Route
               path="payroll/payslips/:id"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Payslip Detail" />
-                </ProtectedRoute>
-              }
+              element={<PayslipDetail />}
             />
             <Route
               path="reports/dashboard"

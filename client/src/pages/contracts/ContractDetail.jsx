@@ -396,6 +396,19 @@ export default function ContractDetail() {
                 {contract.workingSchedule?.name || '—'}
               </div>
             </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-500 mb-1">Salary Structure</label>
+              <div className="px-3 py-2 text-xs bg-gray-50 border border-gray-100 rounded-lg font-medium">
+                {contract.salaryStructure ? (
+                  <span className="text-gray-800">
+                    {contract.salaryStructure.name} ({contract.salaryStructure.code})
+                  </span>
+                ) : (
+                  <span className="text-gray-400 italic">Not assigned</span>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>

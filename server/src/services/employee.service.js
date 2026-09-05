@@ -104,10 +104,10 @@ const createEmployee = async (data) => {
       company: company || 'PeoplePay360',
       bankAccountNumber,
       bankName,
-      ...(departmentId      && { department:      { connect: { id: departmentId } } }),
-      ...(jobPositionId     && { jobPosition:     { connect: { id: jobPositionId } } }),
-      ...(managerId         && { manager:         { connect: { id: managerId } } }),
-      ...(workingScheduleId && { workingSchedule: { connect: { id: workingScheduleId } } }),
+      departmentId:      departmentId      || null,
+      jobPositionId:     jobPositionId     || null,
+      managerId:         managerId         || null,
+      workingScheduleId: workingScheduleId || null,
     },
     include: {
       department:      { select: { id: true, name: true } },
@@ -143,18 +143,10 @@ const updateEmployee = async (id, data) => {
       ...(company           !== undefined && { company }),
       ...(bankAccountNumber !== undefined && { bankAccountNumber }),
       ...(bankName          !== undefined && { bankName }),
-      ...(departmentId      !== undefined && {
-        department: departmentId ? { connect: { id: departmentId } } : { disconnect: true }
-      }),
-      ...(jobPositionId     !== undefined && {
-        jobPosition: jobPositionId ? { connect: { id: jobPositionId } } : { disconnect: true }
-      }),
-      ...(managerId         !== undefined && {
-        manager: managerId ? { connect: { id: managerId } } : { disconnect: true }
-      }),
-      ...(workingScheduleId !== undefined && {
-        workingSchedule: workingScheduleId ? { connect: { id: workingScheduleId } } : { disconnect: true }
-      }),
+      ...(departmentId      !== undefined && { departmentId: departmentId || null }),
+      ...(jobPositionId     !== undefined && { jobPositionId: jobPositionId || null }),
+      ...(managerId         !== undefined && { managerId: managerId || null }),
+      ...(workingScheduleId !== undefined && { workingScheduleId: workingScheduleId || null }),
     },
     include: {
       department:      { select: { id: true, name: true } },

@@ -322,9 +322,7 @@ const createUser = async (data, requestingUserId) => {
       passwordHash,
       role,
       isActive,
-      ...(employeeId && {
-        employee: { connect: { id: employeeId } },
-      }),
+      ...(employeeId && { employeeId }),
     },
     select: {
       id: true, email: true, role: true, isActive: true, createdAt: true,
@@ -345,9 +343,7 @@ const updateUser = async (userId, data, requestingUserId) => {
   if (data.role !== undefined) updateData.role = data.role
   if (data.isActive !== undefined) updateData.isActive = data.isActive
   if (data.employeeId !== undefined) {
-    updateData.employee = data.employeeId
-      ? { connect: { id: data.employeeId } }
-      : { disconnect: true }
+    updateData.employeeId = data.employeeId || null
   }
 
   return prisma.user.update({

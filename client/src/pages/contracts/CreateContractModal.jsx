@@ -229,7 +229,7 @@ export default function CreateContractModal({ isOpen, onClose, defaultEmployeeId
 
         {/* Row 3: Wage | Contract Type */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <FormField label="Wage / Month" required error={errors.wage}>
+          <FormField label="Wage (₹)" required error={errors.wage}>
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-medium">₹</span>
               <input

@@ -47,8 +47,8 @@ app.use('/api/attendance', require('./routes/attendance.routes'))
 app.use('/api/time-off', require('./routes/timeOff.routes'))
 app.use('/api/salary-structures', require('./routes/salaryStructure.routes'))
 app.use('/api/salary-rules', require('./routes/salaryRule.routes'))
-// app.use('/api/payruns', require('./routes/payruns.routes'))
-// app.use('/api/payslips', require('./routes/payslips.routes'))
+app.use('/api/payruns', require('./routes/payrun.routes'))
+app.use('/api/payslips', require('./routes/payslip.routes'))
 // app.use('/api/dashboard', require('./routes/dashboard.routes'))
 
 // ── 404 handler ──

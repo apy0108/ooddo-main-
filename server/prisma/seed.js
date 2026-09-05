@@ -321,7 +321,7 @@ async function main() {
       type: 'FULL_TIME', bank: 'ACC-004-SK', bankName: 'Axis Bank'
     },
     {
-      email: 'vikram.nair@company.com',
+      email: 'aniketyerawar0108@gmail.com',
       role: 'EMPLOYEE',
       firstName: 'Vikram',
       lastName: 'Nair',
@@ -330,7 +330,7 @@ async function main() {
       type: 'FULL_TIME', bank: 'ACC-005-VN', bankName: 'HDFC Bank'
     },
     {
-      email: 'ananya.iyer@company.com',
+      email: 'bhosalesamarth2775@gmail.com',
       role: 'EMPLOYEE',
       firstName: 'Ananya',
       lastName: 'Iyer',
@@ -339,7 +339,7 @@ async function main() {
       type: 'FULL_TIME', bank: 'ACC-006-AI', bankName: 'Kotak Bank'
     },
     {
-      email: 'rahul.desai@company.com',
+      email: 'aniketyerawar2003@gmail.com',
       role: 'EMPLOYEE',
       firstName: 'Rahul',
       lastName: 'Desai',
@@ -632,19 +632,36 @@ async function main() {
   let contractIdx = 0
 
   for (const e of employeeData) {
-    const user = await prisma.user.upsert({
-      where: { email: e.email },
-      update: {},
-      create: {
-        email: e.email,
-        passwordHash: e.email === 'apy0108@gmail.com' ? HASH_ADMIN : HASH_DEFAULT,
-        role: e.role
-      },
-    })
+    let user = await prisma.user.findUnique({ where: { email: e.email } })
+    if (!user) {
+      const existingEmp = await prisma.employee.findUnique({
+        where: { employeeNumber: e.num },
+        include: { user: true }
+      })
+      if (existingEmp && existingEmp.user) {
+        user = await prisma.user.update({
+          where: { id: existingEmp.user.id },
+          data: { email: e.email }
+        })
+      } else {
+        user = await prisma.user.create({
+          data: {
+            email: e.email,
+            passwordHash: e.email === 'apy0108@gmail.com' ? HASH_ADMIN : HASH_DEFAULT,
+            role: e.role
+          }
+        })
+      }
+    }
 
     const employee = await prisma.employee.upsert({
       where: { employeeNumber: e.num },
-      update: {},
+      update: {
+        email: e.email,
+        bankAccountNo: e.bank,
+        bankAccountNumber: e.bank,
+        bankName: e.bankName,
+      },
       create: {
         employeeNumber: e.num,
         firstName: e.firstName,
@@ -653,6 +670,7 @@ async function main() {
         hireDate: new Date(e.hire),
         status: 'ACTIVE',
         bankAccountNumber: e.bank,
+        bankAccountNo: e.bank,
         bankName: e.bankName,
         userId: user.id,
         departmentId: e.dept.id,
@@ -966,114 +984,122 @@ async function main() {
   }
   console.log('✅ Attendance records seeded')
 
-  // ── 9. Completed Payrun for July 2024 ──
-  let julyPayrun = await prisma.payrun.findFirst({ where: { name: 'July 2024 Payroll' } })
-  if (!julyPayrun) {
-    julyPayrun = await prisma.payrun.create({
-      data: {
-        name: 'July 2024 Payroll',
-        salaryStructureId: structure.id,
-        periodStart: new Date('2024-07-01'),
-        periodEnd: new Date('2024-07-31'),
+  // ── 9. Phase 8 Seed Payruns (January 2026 PAID and February 2026 DRAFT) ──
+  const regSalary = regularSalary || await prisma.salaryStructure.findFirst({
+    where: { code: 'REG' }
+  });
+  const admin = adminUser || await prisma.user.findFirst({
+    where: { email: 'apy0108@gmail.com' }
+  });
+  const allEmployees = await prisma.employee.findMany({
+    where: { user: { role: 'EMPLOYEE' } }
+  });
+
+  // Payrun 1 — January 2026 (PAID)
+  const jan2026 = await prisma.payrun.upsert({
+    where: { id: 'seed-payrun-jan-2026' },
+    update: {},
+    create: {
+      id: 'seed-payrun-jan-2026',
+      name: 'January 2026',
+      salaryStructureId: regSalary.id,
+      periodStart: new Date('2026-01-01'),
+      periodEnd: new Date('2026-01-31'),
+      status: 'PAID',
+      createdById: admin.id,
+    },
+  });
+
+  // Create PAID payslips for January 2026 for all employees
+  for (const emp of allEmployees) {
+    const contract = await prisma.contract.findFirst({
+      where: { employeeId: emp.id, status: 'ACTIVE' }
+    });
+    if (!contract) continue;
+    const basic = contract.wage;
+    const hra = Math.round(basic * 0.4);
+    const sti = 10000;
+    const gross = basic + hra + sti;
+    const pf = Math.round(basic * 0.12);
+    const pt = 200;
+    const net = gross - pf - pt;
+
+    const payslip = await prisma.payslip.upsert({
+      where: { id: `seed-ps-jan-${emp.id}` },
+      update: {},
+      create: {
+        id: `seed-ps-jan-${emp.id}`,
+        payrunId: jan2026.id,
+        employeeId: emp.id,
+        salaryStructureId: regSalary.id,
+        periodStart: new Date('2026-01-01'),
+        periodEnd: new Date('2026-01-31'),
+        workedDays: 23,
+        totalDays: 23,
+        basic, gross, deductions: pf + pt, net,
         status: 'PAID',
-        createdBy: 'seed',
-        paidAt: new Date('2024-07-31'),
+        warnings: (emp.bankAccountNo || emp.bankAccountNumber) ? [] : ['A/C missing'],
       },
-    })
-  } else {
-    await prisma.payslip.deleteMany({ where: { payrunId: julyPayrun.id } })
+    });
+
+    // Create lines
+    await prisma.payslipLine.deleteMany({ where: { payslipId: payslip.id } });
+    await prisma.payslipLine.createMany({
+      skipDuplicates: true,
+      data: [
+        { payslipId: payslip.id, ruleName: 'Basic Salary',          ruleCode: 'BASIC', category: 'BASIC',     amount: basic,  sequence: 1  },
+        { payslipId: payslip.id, ruleName: 'House Rent Allowance',  ruleCode: 'HRA',   category: 'ALLOWANCE', amount: hra,    sequence: 10 },
+        { payslipId: payslip.id, ruleName: 'Standard Allowance',    ruleCode: 'STI',   category: 'ALLOWANCE', amount: sti,    sequence: 20 },
+        { payslipId: payslip.id, ruleName: 'Gross Salary',          ruleCode: 'GROS',  category: 'GROSS',     amount: gross,  sequence: 30 },
+        { payslipId: payslip.id, ruleName: 'Provident Fund',        ruleCode: 'PF',    category: 'DEDUCTION', amount: -pf,    sequence: 40 },
+        { payslipId: payslip.id, ruleName: 'Professional Tax',      ruleCode: 'PT',    category: 'DEDUCTION', amount: -pt,    sequence: 50 },
+        { payslipId: payslip.id, ruleName: 'Net Salary',            ruleCode: 'NET',   category: 'NET',       amount: net,    sequence: 60 },
+      ],
+    });
   }
 
-  // For each employee, create a computed payslip
-  const contracts = await prisma.contract.findMany({
-    where: { status: 'ACTIVE' },
-    include: { employee: true }
-  })
-  const rules = await prisma.salaryRule.findMany({
-    where: { structureId: structure.id },
-    orderBy: { sequence: 'asc' },
-  })
+  // Payrun 2 — February 2026 (DRAFT — HR will compute this during testing)
+  const feb2026 = await prisma.payrun.upsert({
+    where: { id: 'seed-payrun-feb-2026' },
+    update: {},
+    create: {
+      id: 'seed-payrun-feb-2026',
+      name: 'February 2026',
+      salaryStructureId: regSalary.id,
+      periodStart: new Date('2026-02-01'),
+      periodEnd: new Date('2026-02-28'),
+      status: 'DRAFT',
+      createdById: admin.id,
+    },
+  });
 
-  const seenEmployees = new Set()
-  for (const contract of contracts) {
-    if (seenEmployees.has(contract.employeeId)) continue
-    seenEmployees.add(contract.employeeId)
-    const computed = {}
-    const lines = []
-
-    for (const rule of rules) {
-      let amount = 0
-      if (rule.amountType === 'CONTRACT_WAGE') {
-        amount = contract.wage
-      } else if (rule.amountType === 'FIXED') {
-        amount = rule.amount || 0
-      } else if (rule.amountType === 'PERCENTAGE') {
-        const base = rule.percentageBase === 'BASIC' ? (computed['BASIC'] || 0) : contract.wage
-        amount = Math.round(((rule.percentage || 0) / 100) * base)
-      } else if (rule.amountType === 'COMPUTED') {
-        if (rule.category === 'GROSS') {
-          amount = lines
-            .filter((l) => ['BASIC', 'ALLOWANCE'].includes(l.category))
-            .reduce((sum, l) => sum + l.amount, 0)
-        } else if (rule.category === 'NET') {
-          const gross = computed['GROS'] || 0
-          const deductions = lines
-            .filter((l) => l.category === 'DEDUCTION')
-            .reduce((sum, l) => sum + l.amount, 0)
-          amount = gross - deductions
-        }
-      }
-      computed[rule.code] = amount
-      lines.push({
-        salaryRuleId: rule.id,
-        name: rule.name,
-        code: rule.code,
-        category: rule.category,
-        sequence: rule.sequence,
-        amount,
-      })
-    }
-
-    const totalAllowances = lines
-      .filter((l) => l.category === 'ALLOWANCE')
-      .reduce((sum, l) => sum + l.amount, 0)
-    const totalDeductions = lines
-      .filter((l) => l.category === 'DEDUCTION')
-      .reduce((sum, l) => sum + l.amount, 0)
-
-    const warnings = []
-    if (!contract.employee.bankAccountNumber) {
-      warnings.push({ message: 'Employee has no bank account number on file.', severity: 'WARNING' })
-    }
-
-    await prisma.payslip.create({
-      data: {
-        payrunId: julyPayrun.id,
-        employeeId: contract.employeeId,
-        contractId: contract.id,
-        salaryStructureId: structure.id,
-        periodStart: new Date('2024-07-01'),
-        periodEnd: new Date('2024-07-31'),
-        status: 'PAID',
-        workedDays: 23,
-        basicSalary: computed['BASIC'] || 0,
-        totalAllowances,
-        grossSalary: computed['GROS'] || 0,
-        totalDeductions,
-        totalContributions: 0,
-        netSalary: computed['NET'] || 0,
-        lines: { create: lines },
-        warnings: { create: warnings },
+  // Create DRAFT payslips for February 2026 (not yet computed)
+  for (const emp of allEmployees) {
+    await prisma.payslip.upsert({
+      where: { id: `seed-ps-feb-${emp.id}` },
+      update: {},
+      create: {
+        id: `seed-ps-feb-${emp.id}`,
+        payrunId: feb2026.id,
+        employeeId: emp.id,
+        salaryStructureId: regSalary.id,
+        periodStart: new Date('2026-02-01'),
+        periodEnd: new Date('2026-02-28'),
+        workedDays: 0,
+        totalDays: 0,
+        basic: 0, gross: 0, deductions: 0, net: 0,
+        status: 'DRAFT',
+        warnings: [],
       },
-    })
+    });
   }
 
   // Update any unlinked contracts to Regular Salary
   await prisma.contract.updateMany({
     where: { salaryStructureId: null },
-    data: { salaryStructureId: structure.id },
-  })
-  console.log('✅ July 2024 payrun and payslips seeded')
+    data: { salaryStructureId: regSalary.id },
+  });
+  console.log('✅ January 2026 and February 2026 payruns seeded');
 
   console.log('\n🎉 Seed complete! Login credentials:')
   console.log('   apy0108@gmail.com         → ADMIN       (password: Apy@0108)')

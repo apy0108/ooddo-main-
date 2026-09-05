@@ -28,6 +28,10 @@ export default function TopNav() {
   const [payrollOpen, setPayrollOpen] = useState(false)
   const payrollDropdownRef = useRef(null)
 
+  const isHR = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
+    user?.role
+  )
+
   const displayName = user?.employee
     ? `${user.employee.firstName} ${user.employee.lastName}`
     : user?.email?.split('@')[0] || 'User'
@@ -144,22 +148,26 @@ export default function TopNav() {
               id="topnav-payroll-dropdown-menu"
               className="absolute left-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-200 py-1.5 z-50 animate-in fade-in slide-in-from-top-2"
             >
-              <Link
-                to="/payroll/dashboard"
-                onClick={() => setPayrollOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-              >
-                <LayoutDashboard size={14} className="text-[#205493]" />
-                <span>Dashboard</span>
-              </Link>
-              <Link
-                to="/payroll/payruns"
-                onClick={() => setPayrollOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-              >
-                <Wallet size={14} className="text-[#205493]" />
-                <span>Payruns</span>
-              </Link>
+              {isHR && (
+                <>
+                  <Link
+                    to="/payroll/dashboard"
+                    onClick={() => setPayrollOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                  >
+                    <LayoutDashboard size={14} className="text-[#205493]" />
+                    <span>Dashboard</span>
+                  </Link>
+                  <Link
+                    to="/payroll/payruns"
+                    onClick={() => setPayrollOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                  >
+                    <Wallet size={14} className="text-[#205493]" />
+                    <span>Payruns</span>
+                  </Link>
+                </>
+              )}
               <Link
                 to="/payroll/payslips"
                 onClick={() => setPayrollOpen(false)}
@@ -168,22 +176,26 @@ export default function TopNav() {
                 <Receipt size={14} className="text-[#205493]" />
                 <span>Payslips</span>
               </Link>
-              <Link
-                to="/payroll/structures"
-                onClick={() => setPayrollOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-              >
-                <Layers size={14} className="text-[#205493]" />
-                <span>Structures</span>
-              </Link>
-              <Link
-                to="/payroll/rules"
-                onClick={() => setPayrollOpen(false)}
-                className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
-              >
-                <Sliders size={14} className="text-[#205493]" />
-                <span>Rules</span>
-              </Link>
+              {isHR && (
+                <>
+                  <Link
+                    to="/payroll/structures"
+                    onClick={() => setPayrollOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                  >
+                    <Layers size={14} className="text-[#205493]" />
+                    <span>Structures</span>
+                  </Link>
+                  <Link
+                    to="/payroll/rules"
+                    onClick={() => setPayrollOpen(false)}
+                    className="flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-gray-700 hover:bg-gray-50 hover:text-[#205493] transition"
+                  >
+                    <Sliders size={14} className="text-[#205493]" />
+                    <span>Rules</span>
+                  </Link>
+                </>
+              )}
             </div>
           )}
         </div>
