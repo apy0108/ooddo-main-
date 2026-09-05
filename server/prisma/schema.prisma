@@ -86,6 +86,27 @@ enum PayslipStatus {
   CANCELLED
 }
 
+enum RuleCategory {
+  BASIC
+  ALLOWANCE
+  GROSS
+  DEDUCTION
+  NET
+}
+
+enum AmountType {
+  FIXED
+  PERCENTAGE
+  CONTRACT_WAGE
+  COMPUTED
+}
+
+enum PercentageBase {
+  BASIC
+  GROSS
+  CONTRACT_WAGE
+}
+
 enum SalaryCategory {
   BASIC
   ALLOWANCE
@@ -339,10 +360,11 @@ model SalaryStructure {
   name        String       @unique
   code        String       @unique
   description String?
-  isActive    Boolean      @default(true)
-  rules       SalaryRule[] @relation("StructureRules")
+  active      Boolean      @default(true)
+  rules       SalaryRule[]
   contracts   Contract[]
   payruns     Payrun[]
+  payslips    Payslip[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -350,24 +372,24 @@ model SalaryStructure {
 }
 
 model SalaryRule {
-  id                 String            @id @default(cuid())
-  name               String
-  code               String            @unique
-  category           SalaryCategory
-  sequence           Int               @default(10)
-  computationMethod  ComputationMethod @default(FIXED)
-  fixedAmount        Float?
-  percentage         Float?
-  percentageBase     String?
-  formula            String?
-  description        String?
-  isActive           Boolean           @default(true)
-  appearsOnPayslip   Boolean           @default(true)
-  structures         SalaryStructure[] @relation("StructureRules")
-  payslipLines       PayslipLine[]
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id              String          @id @default(cuid())
+  structureId     String
+  name            String
+  code            String
+  category        RuleCategory
+  amountType      AmountType
+  amount          Float?
+  percentage      Float?
+  percentageBase  PercentageBase?
+  sequence        Int
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  structure       SalaryStructure @relation(fields: [structureId], references: [id], onDelete: Cascade)
+  payslipLines    PayslipLine[]
 
+  @@unique([structureId, code])
+  @@unique([structureId, sequence])
   @@map("salary_rules")
 }
 
@@ -390,46 +412,48 @@ model Payrun {
 }
 
 model Payslip {
-  id                 String         @id @default(cuid())
-  payrun             Payrun         @relation(fields: [payrunId], references: [id])
+  id                 String           @id @default(cuid())
+  payrun             Payrun           @relation(fields: [payrunId], references: [id])
   payrunId           String
-  employee           Employee       @relation(fields: [employeeId], references: [id])
+  employee           Employee         @relation(fields: [employeeId], references: [id])
   employeeId         String
-  contract           Contract?      @relation(fields: [contractId], references: [id])
+  contract           Contract?        @relation(fields: [contractId], references: [id])
   contractId         String?
+  salaryStructure    SalaryStructure? @relation(fields: [salaryStructureId], references: [id])
+  salaryStructureId  String?
   periodStart        DateTime
   periodEnd          DateTime
-  status             PayslipStatus  @default(DRAFT)
-  workedDays         Float          @default(0)
-  basicSalary        Float          @default(0)
-  totalAllowances    Float          @default(0)
-  grossSalary        Float          @default(0)
-  totalDeductions    Float          @default(0)
-  totalContributions Float          @default(0)
-  netSalary          Float          @default(0)
+  status             PayslipStatus    @default(DRAFT)
+  workedDays         Float            @default(0)
+  basicSalary        Float            @default(0)
+  totalAllowances    Float            @default(0)
+  grossSalary        Float            @default(0)
+  totalDeductions    Float            @default(0)
+  totalContributions Float            @default(0)
+  netSalary          Float            @default(0)
   emailSentAt        DateTime?
   pdfPath            String?
   lines              PayslipLine[]
   warnings           PayslipWarning[]
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@unique([payrunId, employeeId])
   @@map("payslips")
 }
 
 model PayslipLine {
-  id           String         @id @default(cuid())
-  payslip      Payslip        @relation(fields: [payslipId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  payslip      Payslip     @relation(fields: [payslipId], references: [id], onDelete: Cascade)
   payslipId    String
-  salaryRule   SalaryRule     @relation(fields: [salaryRuleId], references: [id])
-  salaryRuleId String
+  salaryRule   SalaryRule? @relation(fields: [salaryRuleId], references: [id], onDelete: SetNull)
+  salaryRuleId String?
   name         String
   code         String
-  category     SalaryCategory
+  category     String?
   sequence     Int
   amount       Float
-  createdAt    DateTime       @default(now())
+  createdAt    DateTime    @default(now())
 
   @@map("payslip_lines")
 }

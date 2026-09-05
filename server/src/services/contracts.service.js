@@ -28,9 +28,7 @@ const checkOverlap = async (employeeId, startDate, endDate, excludeId = null) =>
     const overlaps = newStart.isBefore(existEnd) && existStart.isBefore(newEnd)
     if (overlaps) {
       throw new AppError(
-        `This employee already has a Running contract (${contract.contractRef}) ` +
-        `that overlaps with the selected period. ` +
-        `An employee can only have one Running contract at a time.`,
+        'Employee already has an active contract during this period',
         400
       )
     }

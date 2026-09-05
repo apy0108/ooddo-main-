@@ -142,10 +142,11 @@ const create = async (data, currentUser = {}) => {
     calculatedDuration = 8
   }
 
+  // FIXED: Only check allocation if the leave type requires it
   let allocationId = null
 
   if (type.requiresAllocation) {
-    const approvedAllocation = await prisma.timeOffAllocation.findFirst({
+    const allocation = await prisma.timeOffAllocation.findFirst({
       where: {
         employeeId,
         typeId,
@@ -154,12 +155,16 @@ const create = async (data, currentUser = {}) => {
       orderBy: { createdAt: 'desc' },
     })
 
-    if (!approvedAllocation) {
-      throw new AppError('No approved allocation found for this employee and leave type', 400)
+    if (!allocation) {
+      throw new AppError(
+        'No approved allocation found for this leave type. Ask HR to create one.',
+        400
+      )
     }
 
-    allocationId = approvedAllocation.id
+    allocationId = allocation.id
   }
+  // If requiresAllocation = false → allocationId stays null → no balance check
 
   return prisma.timeOffRequest.create({
     data: {
@@ -204,19 +209,11 @@ const approve = async (id, approverId) => {
   if (!request) throw new AppError('Time off request not found', 404)
   if (request.status === 'APPROVED') throw new AppError('Request is already approved', 400)
 
-  if (request.type.requiresAllocation) {
-    // Find the approved allocation (prefer linked one or active approved one)
-    let allocation = request.allocation
-    if (!allocation || allocation.status !== 'APPROVED') {
-      allocation = await prisma.timeOffAllocation.findFirst({
-        where: {
-          employeeId: request.employeeId,
-          typeId: request.typeId,
-          status: 'APPROVED',
-        },
-        orderBy: { createdAt: 'desc' },
-      })
-    }
+  // Rule T1 — only enforce if type requiresAllocation = true
+  if (request.type.requiresAllocation && request.allocationId) {
+    const allocation = await prisma.timeOffAllocation.findUnique({
+      where: { id: request.allocationId },
+    })
 
     if (!allocation) {
       throw new AppError('No approved allocation found for this leave request', 400)
@@ -225,19 +222,18 @@ const approve = async (id, approverId) => {
     const remaining = allocation.allocated - allocation.taken
     if (request.duration > remaining) {
       throw new AppError(
-        `Insufficient leave balance: Request requires ${request.duration} ${request.type.unit.toLowerCase()}, but only ${remaining} remaining.`,
+        `Insufficient leave balance. Available: ${remaining}, Requested: ${request.duration}`,
         400
       )
     }
 
-    // Atomic transaction: update request status AND increment allocation taken
+    // Deduct in same transaction
     const [updatedRequest] = await prisma.$transaction([
       prisma.timeOffRequest.update({
         where: { id },
         data: {
           status: 'APPROVED',
           approverId,
-          allocationId: allocation.id,
         },
         include: {
           employee: true,
@@ -247,17 +243,15 @@ const approve = async (id, approverId) => {
         },
       }),
       prisma.timeOffAllocation.update({
-        where: { id: allocation.id },
-        data: {
-          taken: { increment: request.duration },
-        },
+        where: { id: request.allocationId },
+        data: { taken: { increment: request.duration } },
       }),
     ])
 
     return updatedRequest
   }
 
-  // If allocation is not required (e.g. Sick Leave)
+  // If no allocation required → approve without any balance check
   return prisma.timeOffRequest.update({
     where: { id },
     data: {

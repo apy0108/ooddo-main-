@@ -263,7 +263,7 @@ export default function TimeOffRequestForm() {
       </div>
 
       {/* ── Balance Warning Banner ── */}
-      {requiresAllocation && (
+      {selectedType && selectedType.requiresAllocation && formData.employeeId && balance && (
         <BalanceBanner
           allocated={balance?.allocated}
           taken={balance?.taken}

@@ -135,32 +135,152 @@ async function main() {
   })
   console.log('✅ Time off types seeded')
 
-  // ── 5. Salary Structure + Rules ──
-  const structure = await prisma.salaryStructure.upsert({
-    where: { code: 'REG_MONTHLY' },
+  // ── 5. Salary Structure + Rules (Phase 7) ──
+  const regularSalary = await prisma.salaryStructure.upsert({
+    where: { code: 'REG' },
     update: {},
     create: {
-      name: 'Regular Monthly Salary',
-      code: 'REG_MONTHLY',
-      description: 'Standard monthly salary structure with allowances and statutory deductions',
-      isActive: true,
-      rules: {
-        create: [
-          { name: 'Basic Salary',          code: 'BASIC',        category: 'BASIC',        sequence: 1,  computationMethod: 'FIXED',      fixedAmount: 0,   description: 'Base wage from contract (auto-overridden)' },
-          { name: 'Transport Allowance',   code: 'TRANS_ALLOW',  category: 'ALLOWANCE',    sequence: 10, computationMethod: 'FIXED',      fixedAmount: 500, appearsOnPayslip: true },
-          { name: 'Meal Allowance',        code: 'MEAL_ALLOW',   category: 'ALLOWANCE',    sequence: 20, computationMethod: 'FIXED',      fixedAmount: 300, appearsOnPayslip: true },
-          { name: 'Housing Allowance',     code: 'HOUSE_ALLOW',  category: 'ALLOWANCE',    sequence: 30, computationMethod: 'PERCENTAGE', percentage: 10,   percentageBase: 'BASIC', appearsOnPayslip: true },
-          { name: 'Gross Salary',          code: 'GROSS',        category: 'GROSS',        sequence: 40, computationMethod: 'FORMULA',    formula: 'BASIC + TRANS_ALLOW + MEAL_ALLOW + HOUSE_ALLOW', appearsOnPayslip: true },
-          { name: 'Income Tax',            code: 'INCOME_TAX',   category: 'DEDUCTION',    sequence: 50, computationMethod: 'PERCENTAGE', percentage: 15,   percentageBase: 'GROSS', appearsOnPayslip: true },
-          { name: 'Social Security',       code: 'SOC_SEC',      category: 'DEDUCTION',    sequence: 60, computationMethod: 'PERCENTAGE', percentage: 5,    percentageBase: 'GROSS', appearsOnPayslip: true },
-          { name: 'Health Insurance',      code: 'HEALTH_INS',   category: 'DEDUCTION',    sequence: 70, computationMethod: 'FIXED',      fixedAmount: 200, appearsOnPayslip: true },
-          { name: 'Pension Contribution',  code: 'PENSION',      category: 'CONTRIBUTION', sequence: 80, computationMethod: 'PERCENTAGE', percentage: 6,    percentageBase: 'GROSS', appearsOnPayslip: true },
-          { name: 'Net Salary',            code: 'NET',          category: 'NET',          sequence: 90, computationMethod: 'FORMULA',    formula: 'GROSS - INCOME_TAX - SOC_SEC - HEALTH_INS', appearsOnPayslip: true },
-        ],
-      },
+      name: 'Regular Salary',
+      code: 'REG',
+      description: 'Standard monthly salary structure for full-time employees.',
+      active: true,
     },
   })
-  console.log('✅ Salary structure and rules seeded')
+
+  const regularRules = [
+    {
+      name: 'Basic Salary',
+      code: 'BASIC',
+      category: 'BASIC',
+      amountType: 'CONTRACT_WAGE',
+      amount: null,
+      percentage: null,
+      percentageBase: null,
+      sequence: 1,
+    },
+    {
+      name: 'House Rent Allowance',
+      code: 'HRA',
+      category: 'ALLOWANCE',
+      amountType: 'PERCENTAGE',
+      amount: null,
+      percentage: 40,
+      percentageBase: 'BASIC',
+      sequence: 2,
+    },
+    {
+      name: 'Standard Allowance',
+      code: 'STI',
+      category: 'ALLOWANCE',
+      amountType: 'FIXED',
+      amount: 10000,
+      percentage: null,
+      percentageBase: null,
+      sequence: 3,
+    },
+    {
+      name: 'Gross Salary',
+      code: 'GROS',
+      category: 'GROSS',
+      amountType: 'COMPUTED',
+      amount: null,
+      percentage: null,
+      percentageBase: null,
+      sequence: 4,
+    },
+    {
+      name: 'Provident Fund',
+      code: 'PF',
+      category: 'DEDUCTION',
+      amountType: 'PERCENTAGE',
+      amount: null,
+      percentage: 12,
+      percentageBase: 'BASIC',
+      sequence: 5,
+    },
+    {
+      name: 'Professional Tax',
+      code: 'PT',
+      category: 'DEDUCTION',
+      amountType: 'FIXED',
+      amount: 200,
+      percentage: null,
+      percentageBase: null,
+      sequence: 6,
+    },
+    {
+      name: 'Net Salary',
+      code: 'NET',
+      category: 'NET',
+      amountType: 'COMPUTED',
+      amount: null,
+      percentage: null,
+      percentageBase: null,
+      sequence: 7,
+    },
+  ]
+
+  for (const rule of regularRules) {
+    await prisma.salaryRule.upsert({
+      where: { structureId_code: { structureId: regularSalary.id, code: rule.code } },
+      update: {},
+      create: { ...rule, structureId: regularSalary.id, active: true },
+    })
+  }
+
+  const hourlyWage = await prisma.salaryStructure.upsert({
+    where: { code: 'HLY' },
+    update: {},
+    create: {
+      name: 'Hourly Wage',
+      code: 'HLY',
+      description: 'Salary structure for hourly or part-time workers.',
+      active: true,
+    },
+  })
+
+  const hourlyRules = [
+    {
+      name: 'Basic Earnings',
+      code: 'BASIC',
+      category: 'BASIC',
+      amountType: 'CONTRACT_WAGE',
+      sequence: 1,
+    },
+    {
+      name: 'Gross Salary',
+      code: 'GROS',
+      category: 'GROSS',
+      amountType: 'COMPUTED',
+      sequence: 2,
+    },
+    {
+      name: 'Professional Tax',
+      code: 'PT',
+      category: 'DEDUCTION',
+      amountType: 'FIXED',
+      amount: 200,
+      sequence: 3,
+    },
+    {
+      name: 'Net Salary',
+      code: 'NET',
+      category: 'NET',
+      amountType: 'COMPUTED',
+      sequence: 4,
+    },
+  ]
+
+  for (const rule of hourlyRules) {
+    await prisma.salaryRule.upsert({
+      where: { structureId_code: { structureId: hourlyWage.id, code: rule.code } },
+      update: {},
+      create: { ...rule, structureId: hourlyWage.id, active: true },
+    })
+  }
+
+  const structure = regularSalary
+  console.log('✅ Salary structures and rules seeded (Regular Salary & Hourly Wage)')
 
   // ── 6. Users + Employees ──
   const employeeData = [
@@ -870,8 +990,8 @@ async function main() {
     include: { employee: true }
   })
   const rules = await prisma.salaryRule.findMany({
-    where: { structures: { some: { id: structure.id } } },
-    orderBy: { sequence: 'asc' }
+    where: { structureId: structure.id },
+    orderBy: { sequence: 'asc' },
   })
 
   const seenEmployees = new Set()
@@ -883,25 +1003,43 @@ async function main() {
 
     for (const rule of rules) {
       let amount = 0
-      if (rule.code === 'BASIC') {
+      if (rule.amountType === 'CONTRACT_WAGE') {
         amount = contract.wage
-      } else if (rule.computationMethod === 'FIXED') {
-        amount = rule.fixedAmount || 0
-      } else if (rule.computationMethod === 'PERCENTAGE') {
-        amount = ((rule.percentage || 0) / 100) * (computed[rule.percentageBase] || 0)
-      } else if (rule.computationMethod === 'FORMULA') {
-        // Simple formula evaluation: replace code names with computed values
-        let formula = rule.formula || '0'
-        for (const [code, val] of Object.entries(computed)) {
-          formula = formula.replaceAll(code, val.toString())
+      } else if (rule.amountType === 'FIXED') {
+        amount = rule.amount || 0
+      } else if (rule.amountType === 'PERCENTAGE') {
+        const base = rule.percentageBase === 'BASIC' ? (computed['BASIC'] || 0) : contract.wage
+        amount = Math.round(((rule.percentage || 0) / 100) * base)
+      } else if (rule.amountType === 'COMPUTED') {
+        if (rule.category === 'GROSS') {
+          amount = lines
+            .filter((l) => ['BASIC', 'ALLOWANCE'].includes(l.category))
+            .reduce((sum, l) => sum + l.amount, 0)
+        } else if (rule.category === 'NET') {
+          const gross = computed['GROS'] || 0
+          const deductions = lines
+            .filter((l) => l.category === 'DEDUCTION')
+            .reduce((sum, l) => sum + l.amount, 0)
+          amount = gross - deductions
         }
-        try { amount = eval(formula) } catch { amount = 0 }
       }
-      computed[rule.code] = Math.round(amount * 100) / 100
-      if (rule.appearsOnPayslip) {
-        lines.push({ salaryRuleId: rule.id, name: rule.name, code: rule.code, category: rule.category, sequence: rule.sequence, amount: computed[rule.code] })
-      }
+      computed[rule.code] = amount
+      lines.push({
+        salaryRuleId: rule.id,
+        name: rule.name,
+        code: rule.code,
+        category: rule.category,
+        sequence: rule.sequence,
+        amount,
+      })
     }
+
+    const totalAllowances = lines
+      .filter((l) => l.category === 'ALLOWANCE')
+      .reduce((sum, l) => sum + l.amount, 0)
+    const totalDeductions = lines
+      .filter((l) => l.category === 'DEDUCTION')
+      .reduce((sum, l) => sum + l.amount, 0)
 
     const warnings = []
     if (!contract.employee.bankAccountNumber) {
@@ -913,21 +1051,28 @@ async function main() {
         payrunId: julyPayrun.id,
         employeeId: contract.employeeId,
         contractId: contract.id,
+        salaryStructureId: structure.id,
         periodStart: new Date('2024-07-01'),
         periodEnd: new Date('2024-07-31'),
         status: 'PAID',
         workedDays: 23,
         basicSalary: computed['BASIC'] || 0,
-        totalAllowances: (computed['TRANS_ALLOW'] || 0) + (computed['MEAL_ALLOW'] || 0) + (computed['HOUSE_ALLOW'] || 0),
-        grossSalary: computed['GROSS'] || 0,
-        totalDeductions: (computed['INCOME_TAX'] || 0) + (computed['SOC_SEC'] || 0) + (computed['HEALTH_INS'] || 0),
-        totalContributions: computed['PENSION'] || 0,
+        totalAllowances,
+        grossSalary: computed['GROS'] || 0,
+        totalDeductions,
+        totalContributions: 0,
         netSalary: computed['NET'] || 0,
         lines: { create: lines },
         warnings: { create: warnings },
       },
     })
   }
+
+  // Update any unlinked contracts to Regular Salary
+  await prisma.contract.updateMany({
+    where: { salaryStructureId: null },
+    data: { salaryStructureId: structure.id },
+  })
   console.log('✅ July 2024 payrun and payslips seeded')
 
   console.log('\n🎉 Seed complete! Login credentials:')

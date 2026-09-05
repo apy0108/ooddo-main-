@@ -9,6 +9,7 @@ import SearchSelect from '../../components/ui/SearchSelect'
 import { employeesApi, departmentsApi, jobPositionsApi } from '../../api/employees.api'
 import { contractsApi } from '../../api/contracts.api'
 import { workingSchedulesApi } from '../../api/workingSchedules.api'
+import { getStructures } from '../../api/salaryStructure.api'
 
 const CONTRACT_TYPES = [
   { value: 'FULL_TIME', label: 'Full Time' },
@@ -75,6 +76,13 @@ export default function CreateContractModal({ isOpen, onClose, defaultEmployeeId
     select: (res) => res.data || [],
   })
 
+  const { data: structures = [] } = useQuery({
+    queryKey: ['salary-structures-dropdown'],
+    queryFn: () => getStructures({ active: true }),
+    enabled: isOpen,
+    select: (res) => res.data?.data || res.data || [],
+  })
+
   // Auto-fill department and position when employee is selected
   const handleEmployeeChange = (empId) => {
     setFormData((prev) => ({ ...prev, employeeId: empId }))
@@ -138,18 +146,23 @@ export default function CreateContractModal({ isOpen, onClose, defaultEmployeeId
     e.preventDefault()
     if (!validate()) return
 
-    createMutation.mutate({
-      employeeId: formData.employeeId,
-      startDate: formData.startDate,
-      endDate: formData.endDate || null,
-      wage: parseFloat(formData.wage),
-      contractType: formData.contractType,
-      departmentId: formData.departmentId || null,
-      jobPositionId: formData.jobPositionId || null,
-      workingScheduleId: formData.workingScheduleId || null,
-      salaryStructureId: formData.salaryStructureId || null,
-      notes: formData.notes || null,
-    })
+    try {
+      createMutation.mutate({
+        employeeId: formData.employeeId,
+        startDate: formData.startDate,
+        endDate: formData.endDate || null,
+        wage: parseFloat(formData.wage),
+        contractType: formData.contractType,
+        departmentId: formData.departmentId || null,
+        jobPositionId: formData.jobPositionId || null,
+        workingScheduleId: formData.workingScheduleId || null,
+        salaryStructureId: formData.salaryStructureId || null,
+        notes: formData.notes || null,
+      })
+    } catch (err) {
+      const msg = err?.response?.data?.message || 'Failed to create contract'
+      toast.error(msg)
+    }
   }
 
   return (
@@ -231,6 +244,9 @@ export default function CreateContractModal({ isOpen, onClose, defaultEmployeeId
                 className="w-full pl-7 pr-3 py-2 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#205493]"
               />
             </div>
+            <small className="text-gray-500 text-[11px] mt-1 block">
+              This wage is used as the Basic Salary in payroll calculations
+            </small>
           </FormField>
 
           <FormField label="Contract Type">
@@ -277,13 +293,30 @@ export default function CreateContractModal({ isOpen, onClose, defaultEmployeeId
           </FormField>
         </div>
 
+        {/* Row 5: Salary Structure */}
+        <FormField label="Salary Structure">
+          <select
+            name="salaryStructureId"
+            value={formData.salaryStructureId}
+            onChange={(e) => setFormData({ ...formData, salaryStructureId: e.target.value })}
+            className="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#205493] cursor-pointer"
+          >
+            <option value="">-- Select Structure (optional) --</option>
+            {structures.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </select>
+        </FormField>
+
         {/* Notes */}
-        <FormField label="Salary Structure / Notes">
+        <FormField label="Notes">
           <textarea
-            rows={4}
+            rows={3}
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Add notes about this contract or salary structure..."
+            placeholder="Add notes about this contract..."
             className="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-lg outline-none focus:border-[#205493] resize-none"
           />
         </FormField>

@@ -21,6 +21,9 @@ import Allocations from './pages/timeOff/Allocations'
 import AllocationForm from './pages/timeOff/AllocationForm'
 import TimeOffRequests from './pages/timeOff/TimeOffRequests'
 import TimeOffRequestForm from './pages/timeOff/TimeOffRequestForm'
+import SalaryStructures from './pages/payroll/SalaryStructures'
+import SalaryStructureForm from './pages/payroll/SalaryStructureForm'
+import SalaryRules from './pages/payroll/SalaryRules'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -132,23 +135,49 @@ export default function App() {
             <Route path="time-off/requests/new" element={<TimeOffRequestForm />} />
             <Route path="time-off/requests/:id" element={<TimeOffRequestForm />} />
 
-            {/* Payroll & Reports */}
+            {/* Payroll Module (Phase 7) */}
             <Route
-              path="payroll/salary-structures"
+              path="payroll/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Salary Structures" />
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                  <ComingSoon title="Payroll Dashboard" />
                 </ProtectedRoute>
               }
             />
             <Route
-              path="payroll/salary-rules"
+              path="payroll/structures"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Salary Rules" />
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                  <SalaryStructures />
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="payroll/structures/new"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_MANAGER']}>
+                  <SalaryStructureForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payroll/structures/:id"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                  <SalaryStructureForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="payroll/rules"
+              element={
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
+                  <SalaryRules />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="payroll/salary-structures" element={<Navigate to="/payroll/structures" replace />} />
+            <Route path="payroll/salary-rules" element={<Navigate to="/payroll/rules" replace />} />
             <Route
               path="payroll/payruns"
               element={
