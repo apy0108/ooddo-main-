@@ -106,10 +106,6 @@ export default function Sidebar() {
                   <FileText size={17} />
                   <span>Contracts</span>
                 </NavLink>
-                <NavLink to="/time-off/requests" className={navLinkClass}>
-                  <Calendar size={17} />
-                  <span>Time Off</span>
-                </NavLink>
               </>
             )}
 

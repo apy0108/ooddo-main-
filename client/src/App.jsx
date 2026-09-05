@@ -14,6 +14,13 @@ import ContractList from './pages/contracts/ContractList'
 import ContractDetail from './pages/contracts/ContractDetail'
 import AttendanceList from './pages/attendance/AttendanceList'
 import AttendanceDetail from './pages/attendance/AttendanceDetail'
+import TimeOffDashboard from './pages/timeOff/TimeOffDashboard'
+import TimeOffTypes from './pages/timeOff/TimeOffTypes'
+import TimeOffTypeForm from './pages/timeOff/TimeOffTypeForm'
+import Allocations from './pages/timeOff/Allocations'
+import AllocationForm from './pages/timeOff/AllocationForm'
+import TimeOffRequests from './pages/timeOff/TimeOffRequests'
+import TimeOffRequestForm from './pages/timeOff/TimeOffRequestForm'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -113,30 +120,17 @@ export default function App() {
             />
             <Route path="attendance" element={<AttendanceList />} />
             <Route path="attendance/:id" element={<AttendanceDetail />} />
-            <Route
-              path="time-off/types"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Time Off Types" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="time-off/allocations"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Allocations" />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="time-off/requests"
-              element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}>
-                  <ComingSoon title="Time Off Requests" />
-                </ProtectedRoute>
-              }
-            />
+            {/* Time Off Module */}
+            <Route path="time-off/dashboard" element={<TimeOffDashboard />} />
+            <Route path="time-off/types" element={<TimeOffTypes />} />
+            <Route path="time-off/types/new" element={<TimeOffTypeForm />} />
+            <Route path="time-off/types/:id" element={<TimeOffTypeForm />} />
+            <Route path="time-off/allocations" element={<Allocations />} />
+            <Route path="time-off/allocations/new" element={<AllocationForm />} />
+            <Route path="time-off/allocations/:id" element={<AllocationForm />} />
+            <Route path="time-off/requests" element={<TimeOffRequests />} />
+            <Route path="time-off/requests/new" element={<TimeOffRequestForm />} />
+            <Route path="time-off/requests/:id" element={<TimeOffRequestForm />} />
 
             {/* Payroll & Reports */}
             <Route

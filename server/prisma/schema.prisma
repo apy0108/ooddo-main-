@@ -46,31 +46,28 @@ enum AttendanceStatus {
   HOLIDAY
 }
 
-enum TimeOffStatus {
-  DRAFT
-  PENDING
-  APPROVED
-  REFUSED
-  CANCELLED
-}
-
-enum AllocationStatus {
-  DRAFT
-  PENDING
-  APPROVED
-  REFUSED
-}
-
 enum TimeOffUnit {
   DAYS
   HOURS
 }
 
-enum LeaveApprovalMode {
-  NO_VALIDATION
-  HR_MANAGER
-  EMPLOYEE_MANAGER
-  SET_BY_TIME_OFF_OFFICER
+enum ApprovalMode {
+  MANAGER
+  OFFICER
+  HR
+}
+
+enum AllocationStatus {
+  DRAFT
+  APPROVED
+  REFUSED
+}
+
+enum RequestStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  REFUSED
 }
 
 enum PayrunStatus {
@@ -125,6 +122,8 @@ model User {
   resetToken        String?
   resetTokenExpiry  DateTime?
   employee          Employee?
+  approvedAllocations TimeOffAllocation[] @relation("AllocationApprover")
+  approvedRequests    TimeOffRequest[]    @relation("RequestApprover")
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
@@ -278,61 +277,59 @@ model Attendance {
 model TimeOffType {
   id                 String              @id @default(cuid())
   name               String              @unique
-  code               String              @unique
-  unit               TimeOffUnit         @default(DAYS)
+  unit               TimeOffUnit
   requiresAllocation Boolean             @default(true)
-  approvalMode       LeaveApprovalMode   @default(HR_MANAGER)
-  isPaid             Boolean             @default(true)
-  maxDaysPerYear     Float?
-  color              String              @default("#3B82F6")
-  isActive           Boolean             @default(true)
-  requests           TimeOffRequest[]
-  allocations        TimeOffAllocation[]
+  approval           ApprovalMode
+  payrollWorkEntry   String?
+  displayColor       String?
+  configNotes        String?
+  active             Boolean             @default(true)
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+  allocations        TimeOffAllocation[]
+  requests           TimeOffRequest[]
 
   @@map("time_off_types")
 }
 
 model TimeOffAllocation {
-  id            String           @id @default(cuid())
-  employee      Employee         @relation(fields: [employeeId], references: [id])
-  employeeId    String
-  timeOffType   TimeOffType      @relation(fields: [timeOffTypeId], references: [id])
-  timeOffTypeId String
-  numberOfDays  Float
-  usedDays      Float            @default(0)
-  validFrom     DateTime
-  validTo       DateTime
-  status        AllocationStatus @default(DRAFT)
-  notes         String?
-  approvedBy    String?
-  approvedAt    DateTime?
-  requests      TimeOffRequest[]
-  createdAt     DateTime         @default(now())
-  updatedAt     DateTime         @updatedAt
+  id           String             @id @default(cuid())
+  employeeId   String
+  typeId       String
+  allocated    Float
+  taken        Float              @default(0)
+  validity     String?
+  description  String?
+  status       AllocationStatus
+  approverId   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  employee     Employee           @relation(fields: [employeeId], references: [id])
+  type         TimeOffType        @relation(fields: [typeId], references: [id])
+  approver     User?              @relation("AllocationApprover", fields: [approverId], references: [id])
+  requests     TimeOffRequest[]
 
   @@map("time_off_allocations")
 }
 
 model TimeOffRequest {
-  id            String            @id @default(cuid())
-  employee      Employee          @relation(fields: [employeeId], references: [id])
-  employeeId    String
-  timeOffType   TimeOffType       @relation(fields: [timeOffTypeId], references: [id])
-  timeOffTypeId String
-  allocation    TimeOffAllocation? @relation(fields: [allocationId], references: [id])
-  allocationId  String?
-  startDate     DateTime
-  endDate       DateTime
-  numberOfDays  Float
-  description   String?
-  status        TimeOffStatus     @default(DRAFT)
-  approvedBy    String?
-  approvedAt    DateTime?
-  refusalReason String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id             String          @id @default(cuid())
+  employeeId     String
+  typeId         String
+  allocationId   String?
+  startDate      DateTime
+  endDate        DateTime
+  duration       Float
+  reason         String?
+  status         RequestStatus
+  approverId     String?
+  refuseReason   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  employee       Employee        @relation(fields: [employeeId], references: [id])
+  type           TimeOffType     @relation(fields: [typeId], references: [id])
+  allocation     TimeOffAllocation? @relation(fields: [allocationId], references: [id])
+  approver       User?           @relation("RequestApprover", fields: [approverId], references: [id])
 
   @@map("time_off_requests")
 }

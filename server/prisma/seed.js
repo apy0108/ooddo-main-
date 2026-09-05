@@ -89,13 +89,50 @@ async function main() {
   console.log('✅ Working schedules seeded')
 
   // ── 4. Time Off Types ──
-  const [annual, sick, unpaid, maternity, compassionate] = await Promise.all([
-    prisma.timeOffType.upsert({ where: { code: 'ANNUAL' }, update: {}, create: { name: 'Annual Leave', code: 'ANNUAL', unit: 'DAYS', requiresAllocation: true, approvalMode: 'HR_MANAGER', isPaid: true, maxDaysPerYear: 21, color: '#3B82F6' } }),
-    prisma.timeOffType.upsert({ where: { code: 'SICK' }, update: {}, create: { name: 'Sick Leave', code: 'SICK', unit: 'DAYS', requiresAllocation: false, approvalMode: 'HR_MANAGER', isPaid: true, maxDaysPerYear: 14, color: '#EF4444' } }),
-    prisma.timeOffType.upsert({ where: { code: 'UNPAID' }, update: {}, create: { name: 'Unpaid Leave', code: 'UNPAID', unit: 'DAYS', requiresAllocation: false, approvalMode: 'HR_MANAGER', isPaid: false, color: '#6B7280' } }),
-    prisma.timeOffType.upsert({ where: { code: 'MATERNITY' }, update: {}, create: { name: 'Maternity Leave', code: 'MATERNITY', unit: 'DAYS', requiresAllocation: true, approvalMode: 'HR_MANAGER', isPaid: true, maxDaysPerYear: 90, color: '#EC4899' } }),
-    prisma.timeOffType.upsert({ where: { code: 'COMPASSIONATE' }, update: {}, create: { name: 'Compassionate Leave', code: 'COMPASSIONATE', unit: 'DAYS', requiresAllocation: false, approvalMode: 'HR_MANAGER', isPaid: true, maxDaysPerYear: 5, color: '#8B5CF6' } }),
-  ])
+  const paidLeave = await prisma.timeOffType.upsert({
+    where: { name: 'Paid Time Off' },
+    update: {},
+    create: {
+      name: 'Paid Time Off',
+      unit: 'DAYS',
+      requiresAllocation: true,
+      approval: 'MANAGER',
+      payrollWorkEntry: 'Leave Work Entry',
+      displayColor: 'blue',
+      configNotes: 'Standard annual leave. Balance comes from approved allocations.',
+      active: true,
+    },
+  })
+
+  const sickLeave = await prisma.timeOffType.upsert({
+    where: { name: 'Sick Leave' },
+    update: {},
+    create: {
+      name: 'Sick Leave',
+      unit: 'DAYS',
+      requiresAllocation: false,
+      approval: 'MANAGER',
+      payrollWorkEntry: 'Leave Work Entry',
+      displayColor: 'red',
+      configNotes: 'No allocation required. Employee submits; manager approves.',
+      active: true,
+    },
+  })
+
+  const compOff = await prisma.timeOffType.upsert({
+    where: { name: 'Comp Off' },
+    update: {},
+    create: {
+      name: 'Comp Off',
+      unit: 'HOURS',
+      requiresAllocation: true,
+      approval: 'OFFICER',
+      payrollWorkEntry: 'Leave Work Entry',
+      displayColor: 'green',
+      configNotes: 'Compensatory off tracked in hours.',
+      active: true,
+    },
+  })
   console.log('✅ Time off types seeded')
 
   // ── 5. Salary Structure + Rules ──
@@ -526,21 +563,7 @@ async function main() {
       },
     })
 
-    // Create approved Annual Leave allocation (21 days, valid full year)
-    await prisma.timeOffAllocation.create({
-      data: {
-        employeeId: employee.id,
-        timeOffTypeId: annual.id,
-        numberOfDays: 21,
-        usedDays: 0,
-        validFrom: new Date('2024-01-01'),
-        validTo: new Date('2024-12-31'),
-        status: 'APPROVED',
-        approvedBy: 'seed',
-        approvedAt: new Date('2024-01-01'),
-      },
-    })
-
+    // Phase 6: Allocations will be seeded in dedicated section below
     createdEmployees.push(employee)
   }
   console.log('✅ Users and employees seeded')
@@ -577,39 +600,122 @@ async function main() {
   }
   console.log('✅ Attendance records seeded (60 days)')
 
-  // ── 8. Sample Time Off Requests ──
-  const emp5 = createdEmployees[4] // John Doe
-  const emp5Alloc = await prisma.timeOffAllocation.findFirst({
-    where: { employeeId: emp5.id, timeOffTypeId: annual.id }
-  })
-  await prisma.timeOffRequest.create({
-    data: {
-      employeeId: emp5.id,
-      timeOffTypeId: annual.id,
-      allocationId: emp5Alloc?.id,
-      startDate: new Date('2024-08-01'),
-      endDate: new Date('2024-08-05'),
-      numberOfDays: 5,
-      description: 'Summer vacation',
-      status: 'APPROVED',
-      approvedBy: 'seed',
-      approvedAt: new Date('2024-07-15'),
-    },
-  })
+  // ── 8. Phase 6 Time Off Allocations and Requests ──
+  const adminUser = await prisma.user.findUnique({ where: { email: 'apy0108@gmail.com' } })
+  const empVikram = createdEmployees.find(e => e.workEmail === 'vikram.nair@company.com')
+  const empAnanya = createdEmployees.find(e => e.workEmail === 'ananya.iyer@company.com')
+  const empRahul = createdEmployees.find(e => e.workEmail === 'rahul.desai@company.com')
 
-  const emp6 = createdEmployees[5] // Jane Smith
-  await prisma.timeOffRequest.create({
-    data: {
-      employeeId: emp6.id,
-      timeOffTypeId: sick.id,
-      startDate: dayjs().subtract(2, 'day').toDate(),
-      endDate: dayjs().subtract(1, 'day').toDate(),
-      numberOfDays: 2,
-      description: 'Flu',
-      status: 'PENDING',
-    },
-  })
-  console.log('✅ Time off requests seeded')
+  // Allocations
+  let vikramPtoAlloc, vikramCompAlloc, ananyaPtoAlloc, rahulCompAlloc;
+  if (empVikram) {
+    vikramPtoAlloc = await prisma.timeOffAllocation.create({
+      data: {
+        employeeId: empVikram.id,
+        timeOffTypeId: paidLeave.id,
+        allocated: 21,
+        taken: 5, // Rule T2: Vikram has 5 days approved taken
+        validFrom: new Date('2026-01-01'),
+        validTo: new Date('2026-12-31'),
+        status: 'APPROVED',
+        approvedById: adminUser?.id,
+        approvedAt: new Date('2026-01-01'),
+      },
+    })
+
+    vikramCompAlloc = await prisma.timeOffAllocation.create({
+      data: {
+        employeeId: empVikram.id,
+        timeOffTypeId: compOff.id,
+        allocated: 8,
+        taken: 0,
+        validFrom: new Date('2026-01-01'),
+        validTo: new Date('2026-12-31'),
+        status: 'APPROVED',
+        approvedById: adminUser?.id,
+        approvedAt: new Date('2026-01-01'),
+      },
+    })
+  }
+
+  if (empAnanya) {
+    ananyaPtoAlloc = await prisma.timeOffAllocation.create({
+      data: {
+        employeeId: empAnanya.id,
+        timeOffTypeId: paidLeave.id,
+        allocated: 21,
+        taken: 0,
+        validFrom: new Date('2026-01-01'),
+        validTo: new Date('2026-12-31'),
+        status: 'APPROVED',
+        approvedById: adminUser?.id,
+        approvedAt: new Date('2026-01-01'),
+      },
+    })
+  }
+
+  if (empRahul) {
+    rahulCompAlloc = await prisma.timeOffAllocation.create({
+      data: {
+        employeeId: empRahul.id,
+        timeOffTypeId: compOff.id,
+        allocated: 16,
+        taken: 0,
+        validFrom: new Date('2026-01-01'),
+        validTo: new Date('2026-12-31'),
+        status: 'APPROVED',
+        approvedById: adminUser?.id,
+        approvedAt: new Date('2026-01-01'),
+      },
+    })
+  }
+  console.log('✅ Phase 6 Allocations seeded')
+
+  // Requests
+  if (empVikram && vikramPtoAlloc) {
+    await prisma.timeOffRequest.create({
+      data: {
+        employeeId: empVikram.id,
+        timeOffTypeId: paidLeave.id,
+        startDate: new Date('2026-09-12'),
+        endDate: new Date('2026-09-16'),
+        duration: 5,
+        status: 'APPROVED',
+        description: 'Family vacation in Kerala',
+        approvedById: adminUser?.id,
+        approvedAt: new Date('2026-09-01'),
+      },
+    })
+  }
+
+  if (empAnanya) {
+    await prisma.timeOffRequest.create({
+      data: {
+        employeeId: empAnanya.id,
+        timeOffTypeId: sickLeave.id,
+        startDate: dayjs().toDate(),
+        endDate: dayjs().add(1, 'day').toDate(),
+        duration: 2,
+        status: 'PENDING',
+        description: 'Viral fever and rest prescribed by doctor',
+      },
+    })
+  }
+
+  if (empRahul) {
+    await prisma.timeOffRequest.create({
+      data: {
+        employeeId: empRahul.id,
+        timeOffTypeId: compOff.id,
+        startDate: dayjs().toDate(),
+        endDate: dayjs().toDate(),
+        duration: 4,
+        status: 'PENDING',
+        description: 'Comp off for weekend support activity',
+      },
+    })
+  }
+  console.log('✅ Phase 6 Time off requests seeded')
 
   // ── 8b. Attendance Records ──
   const seedAttendances = [
@@ -741,17 +847,22 @@ async function main() {
   console.log('✅ Attendance records seeded')
 
   // ── 9. Completed Payrun for July 2024 ──
-  const julyPayrun = await prisma.payrun.create({
-    data: {
-      name: 'July 2024 Payroll',
-      salaryStructureId: structure.id,
-      periodStart: new Date('2024-07-01'),
-      periodEnd: new Date('2024-07-31'),
-      status: 'PAID',
-      createdBy: 'seed',
-      paidAt: new Date('2024-07-31'),
-    },
-  })
+  let julyPayrun = await prisma.payrun.findFirst({ where: { name: 'July 2024 Payroll' } })
+  if (!julyPayrun) {
+    julyPayrun = await prisma.payrun.create({
+      data: {
+        name: 'July 2024 Payroll',
+        salaryStructureId: structure.id,
+        periodStart: new Date('2024-07-01'),
+        periodEnd: new Date('2024-07-31'),
+        status: 'PAID',
+        createdBy: 'seed',
+        paidAt: new Date('2024-07-31'),
+      },
+    })
+  } else {
+    await prisma.payslip.deleteMany({ where: { payrunId: julyPayrun.id } })
+  }
 
   // For each employee, create a computed payslip
   const contracts = await prisma.contract.findMany({
@@ -763,7 +874,10 @@ async function main() {
     orderBy: { sequence: 'asc' }
   })
 
+  const seenEmployees = new Set()
   for (const contract of contracts) {
+    if (seenEmployees.has(contract.employeeId)) continue
+    seenEmployees.add(contract.employeeId)
     const computed = {}
     const lines = []
 
