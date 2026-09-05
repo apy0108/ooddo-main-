@@ -50,6 +50,8 @@ app.use('/api/salary-rules', require('./routes/salaryRule.routes'))
 app.use('/api/payruns', require('./routes/payrun.routes'))
 app.use('/api/payslips', require('./routes/payslip.routes'))
 app.use('/api/dashboard', require('./routes/dashboard.routes'))
+app.use('/api/users', require('./routes/user.routes'))
+
 
 
 // ── 404 handler ──

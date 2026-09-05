@@ -61,15 +61,31 @@ const ROLES_CONFIG = [
   },
 ]
 
+const MANAGEABLE_ROLES = {
+  ADMIN: ['HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'EMPLOYEE'],
+  HR_MANAGER: ['HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'EMPLOYEE'],
+  HR_PAYROLL_MANAGER: ['HR_PAYROLL_USER', 'EMPLOYEE'],
+  HR_PAYROLL_USER: [],
+  EMPLOYEE: [],
+}
+
 export default function Users() {
   const queryClient = useQueryClient()
-  const currentUserId = useAuthStore((s) => s.user?.id)
+  const { user: loggedInUser } = useAuthStore()
+  const currentUserId = loggedInUser?.id
+  const manageableRoles = MANAGEABLE_ROLES[loggedInUser?.role] || []
 
   const [searchQuery, setSearchQuery] = useState('')
   const [roleFilter, setRoleFilter] = useState('ALL')
   const [selectedUser, setSelectedUser] = useState(null)
   const [panelMode, setPanelMode] = useState('CREATE') // 'CREATE' | 'EDIT'
   const [showBlueprint, setShowBlueprint] = useState(false)
+
+  const isSelf = selectedUser?.id === currentUserId
+  const canManage =
+    panelMode === 'CREATE'
+      ? manageableRoles.length > 0
+      : !isSelf && manageableRoles.includes(selectedUser?.role)
 
   // Form State
   const [formData, setFormData] = useState({
@@ -80,6 +96,7 @@ export default function Users() {
     isActive: true,
   })
   const [formErrors, setFormErrors] = useState({})
+
 
   // Fetch Users
   const { data: users = [], isLoading: isUsersLoading } = useQuery({
@@ -542,8 +559,8 @@ export default function Users() {
               <div className="space-y-1.5 border border-gray-200 rounded-lg p-2 bg-gray-50/30">
                 {ROLES_CONFIG.map((r) => {
                   const isChecked = formData.role === r.value
-                  const isSelf = selectedUser?.id === currentUserId
-                  const disabled = isSelf && r.value !== formData.role
+                  const isAssignable = manageableRoles.includes(r.value)
+                  const disabled = !canManage || (!isAssignable && r.value !== formData.role)
 
                   return (
                     <div
@@ -553,7 +570,7 @@ export default function Users() {
                         isChecked
                           ? 'bg-blue-50/80 border border-blue-200/80'
                           : 'hover:bg-gray-100/60 border border-transparent'
-                      } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      } ${disabled ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                     >
                       <div className="flex items-center gap-2.5">
                         <div className="text-blue-700">
@@ -573,9 +590,14 @@ export default function Users() {
                 })}
               </div>
 
-              {selectedUser?.id === currentUserId && (
+              {isSelf && (
                 <p className="mt-1.5 text-[11px] text-amber-600">
-                  You cannot change your own administrator role.
+                  You cannot change your own role.
+                </p>
+              )}
+              {!canManage && !isSelf && selectedUser && (
+                <p className="mt-1.5 text-[11px] text-rose-600">
+                  You do not have permission to manage this user's role or status.
                 </p>
               )}
             </div>
@@ -587,9 +609,10 @@ export default function Users() {
                 <p className="text-[10px] text-gray-400">Enables system authentication</p>
               </div>
 
-              <div className="flex items-center border border-gray-200 rounded-lg p-0.5 bg-gray-50">
+              <div className={`flex items-center border border-gray-200 rounded-lg p-0.5 bg-gray-50 ${(!canManage || isSelf) ? 'opacity-50 pointer-events-none' : ''}`}>
                 <button
                   type="button"
+                  disabled={!canManage || isSelf}
                   onClick={() => setFormData({ ...formData, isActive: true })}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
                     formData.isActive
@@ -601,6 +624,7 @@ export default function Users() {
                 </button>
                 <button
                   type="button"
+                  disabled={!canManage || isSelf}
                   onClick={() => setFormData({ ...formData, isActive: false })}
                   className={`px-3 py-1 text-xs font-semibold rounded-md transition cursor-pointer ${
                     !formData.isActive
@@ -617,8 +641,8 @@ export default function Users() {
             <div className="pt-2 space-y-2">
               <button
                 type="submit"
-                disabled={isSaving}
-                className="w-full py-2 px-4 rounded-lg bg-[#1e4e8c] hover:bg-[#183e70] active:bg-[#122f56] text-white text-xs font-semibold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+                disabled={isSaving || (!canManage && panelMode === 'EDIT')}
+                className="w-full py-2 px-4 rounded-lg bg-[#1e4e8c] hover:bg-[#183e70] active:bg-[#122f56] text-white text-xs font-semibold shadow-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSaving ? (
                   <>
@@ -628,10 +652,11 @@ export default function Users() {
                 ) : (
                   <>
                     <Shield size={14} />
-                    <span>Create User / Save Access</span>
+                    <span>{panelMode === 'CREATE' ? 'Create User' : 'Save Access Changes'}</span>
                   </>
                 )}
               </button>
+
 
               <button
                 type="button"

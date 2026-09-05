@@ -56,14 +56,15 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<ComingSoon title="Dashboard" />} />
+            <Route index element={<Navigate to="/payroll/dashboard" replace />} />
+            <Route path="dashboard" element={<Navigate to="/payroll/dashboard" replace />} />
 
-            {/* Admin Only */}
+
+            {/* User Management */}
             <Route
               path="users"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN']}>
+                <ProtectedRoute allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER']}>
                   <Users />
                 </ProtectedRoute>
               }

@@ -1,6 +1,22 @@
 const prisma = require('../config/prisma')
 
 /**
+ * Helper — get default period (most recent month with payslips, or current month)
+ */
+async function getDefaultPeriod() {
+  const latest = await prisma.payslip.findFirst({
+    orderBy: { periodStart: 'desc' },
+    select: { periodStart: true },
+  })
+  if (!latest) {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  }
+  const d = new Date(latest.periodStart)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+}
+
+/**
  * Helper — build period date range from period string (e.g. "2026-09")
  */
 function getPeriodRange(period) {
@@ -22,8 +38,9 @@ async function getFilteredEmployeeIds(filters = {}) {
   if (filters.departmentId) where.departmentId = filters.departmentId
   if (filters.employeeType) where.workLocation = filters.employeeType
   if (filters.company) where.company = filters.company
+
   const employees = await prisma.employee.findMany({
-    where,
+    where: Object.keys(where).length > 0 ? where : undefined,
     select: { id: true },
   })
   return employees.map((e) => e.id)
@@ -33,14 +50,21 @@ async function getFilteredEmployeeIds(filters = {}) {
  * Function A — getSummaryCards(filters)
  */
 async function getSummaryCards(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
 
-  // Card 1: Total Net Salary Paid
+  const employeeFilter =
+    employeeIds.length > 0 ? { employeeId: { in: employeeIds } } : {}
+
+  // Card 1: Total Net Salary Paid (includes PAID or DONE)
   const totalNetPaid = await prisma.payslip.aggregate({
     where: {
-      employeeId: { in: employeeIds },
-      status: 'PAID',
+      ...employeeFilter,
+      status: { in: ['PAID', 'DONE'] },
       periodStart: { gte: start },
       periodEnd: { lte: end },
     },
@@ -50,15 +74,20 @@ async function getSummaryCards(filters = {}) {
   // Previous month total (for % change)
   const prevStart = new Date(start)
   prevStart.setMonth(prevStart.getMonth() - 1)
-  const prevEnd = new Date(end)
-  prevEnd.setMonth(prevEnd.getMonth() - 1)
-  // Ensure last day of previous month
-  const prevLastDay = new Date(prevStart.getFullYear(), prevStart.getMonth() + 1, 0, 23, 59, 59, 999)
+  const prevLastDay = new Date(
+    prevStart.getFullYear(),
+    prevStart.getMonth() + 1,
+    0,
+    23,
+    59,
+    59,
+    999
+  )
 
   const prevNetPaid = await prisma.payslip.aggregate({
     where: {
-      employeeId: { in: employeeIds },
-      status: 'PAID',
+      ...employeeFilter,
+      status: { in: ['PAID', 'DONE'] },
       periodStart: { gte: prevStart },
       periodEnd: { lte: prevLastDay },
     },
@@ -76,7 +105,7 @@ async function getSummaryCards(filters = {}) {
   const payslipCounts = await prisma.payslip.groupBy({
     by: ['status'],
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       periodStart: { gte: start },
       periodEnd: { lte: end },
     },
@@ -84,7 +113,9 @@ async function getSummaryCards(filters = {}) {
   })
 
   const totalPayslips = payslipCounts.reduce((s, g) => s + g._count, 0)
-  const paidCount = payslipCounts.find((g) => g.status === 'PAID')?._count || 0
+  const paidCount =
+    (payslipCounts.find((g) => g.status === 'PAID')?._count || 0) +
+    (payslipCounts.find((g) => g.status === 'DONE')?._count || 0)
   const pendingCount = totalPayslips - paidCount
 
   // Card 3: Average Salary per Employee
@@ -94,7 +125,7 @@ async function getSummaryCards(filters = {}) {
   // Card 4: Approved Time Off Days
   const timeOffTotal = await prisma.timeOffRequest.aggregate({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       status: 'APPROVED',
       startDate: { gte: start },
       endDate: { lte: end },
@@ -105,7 +136,7 @@ async function getSummaryCards(filters = {}) {
   // Card 5: Attendance Health %
   const attendanceRecords = await prisma.attendance.findMany({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       OR: [
         { checkIn: { gte: start, lte: end } },
         { AND: [{ checkIn: null }, { createdAt: { gte: start, lte: end } }] },
@@ -136,19 +167,25 @@ async function getSummaryCards(filters = {}) {
  * Function B — getSalaryByDepartment(filters)
  */
 async function getSalaryByDepartment(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
+  const employeeFilter =
+    employeeIds.length > 0 ? { id: { in: employeeIds } } : undefined
 
   // Get employees with their departments
   const employees = await prisma.employee.findMany({
-    where: { id: { in: employeeIds } },
+    where: employeeFilter,
     include: { department: { select: { name: true } } },
   })
 
   // Get payslips for those employees in period
   const payslips = await prisma.payslip.findMany({
     where: {
-      employeeId: { in: employeeIds },
+      ...(employeeIds.length > 0 && { employeeId: { in: employeeIds } }),
       status: { in: ['DONE', 'PAID', 'COMPUTED'] },
       periodStart: { gte: start },
       periodEnd: { lte: end },
@@ -175,7 +212,14 @@ async function getSalaryByDepartment(filters = {}) {
  * Function C — getSalaryTrend(filters)
  */
 async function getSalaryTrend(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const employeeIds = await getFilteredEmployeeIds(filters)
+  const employeeFilter =
+    employeeIds.length > 0 ? { employeeId: { in: employeeIds } } : {}
+
   const { year, month } = getPeriodRange(filters.period)
   const months = []
 
@@ -186,7 +230,7 @@ async function getSalaryTrend(filters = {}) {
 
     const result = await prisma.payslip.aggregate({
       where: {
-        employeeId: { in: employeeIds },
+        ...employeeFilter,
         status: { in: ['DONE', 'PAID'] },
         periodStart: { gte: mStart },
         periodEnd: { lte: mEnd },
@@ -207,12 +251,18 @@ async function getSalaryTrend(filters = {}) {
  * Function D — getPayslipStatusSplit(filters)
  */
 async function getPayslipStatusSplit(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
+  const employeeFilter =
+    employeeIds.length > 0 ? { employeeId: { in: employeeIds } } : {}
 
   const payslips = await prisma.payslip.findMany({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       periodStart: { gte: start },
       periodEnd: { lte: end },
     },
@@ -232,7 +282,7 @@ async function getPayslipStatusSplit(filters = {}) {
 
   const missingBank = await prisma.employee.count({
     where: {
-      id: { in: employeeIds },
+      ...(employeeIds.length > 0 && { id: { in: employeeIds } }),
       OR: [{ bankAccountNo: null }, { bankAccountNo: '' }],
     },
   })
@@ -247,7 +297,7 @@ async function getPayslipStatusSplit(filters = {}) {
 
   const expiringContracts = await prisma.contract.count({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       status: 'ACTIVE',
       endDate: { gte: now, lte: monthEnd },
     },
@@ -268,12 +318,18 @@ async function getPayslipStatusSplit(filters = {}) {
  * Function E — getAttendanceOverview(filters)
  */
 async function getAttendanceOverview(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
+  const employeeFilter =
+    employeeIds.length > 0 ? { employeeId: { in: employeeIds } } : {}
 
   const records = await prisma.attendance.findMany({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       OR: [
         { checkIn: { gte: start, lte: end } },
         { AND: [{ checkIn: null }, { createdAt: { gte: start, lte: end } }] },
@@ -289,14 +345,14 @@ async function getAttendanceOverview(filters = {}) {
   // Missing checkouts = checked in but no checkout
   const missingCheckouts = await prisma.attendance.count({
     where: {
-      employeeId: { in: employeeIds },
+      ...employeeFilter,
       checkIn: { gte: start, lte: end },
       checkOut: null,
       status: { not: 'ABSENT' },
     },
   })
 
-  // Manual edits = records edited by HR (where notes contains 'edited by' or isManualEdit is true)
+  // Manual edits = records edited by HR
   const manualEdits = records.filter(
     (r) =>
       r.isManualEdit ||
@@ -321,8 +377,14 @@ async function getAttendanceOverview(filters = {}) {
  * Function F — getTimeOffOverview(filters)
  */
 async function getTimeOffOverview(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
+  const employeeFilter =
+    employeeIds.length > 0 ? { employeeId: { in: employeeIds } } : {}
 
   const types = await prisma.timeOffType.findMany({
     where: { active: true },
@@ -332,7 +394,7 @@ async function getTimeOffOverview(filters = {}) {
   for (const type of types) {
     const approved = await prisma.timeOffRequest.aggregate({
       where: {
-        employeeId: { in: employeeIds },
+        ...employeeFilter,
         typeId: type.id,
         status: 'APPROVED',
         startDate: { gte: start },
@@ -343,7 +405,7 @@ async function getTimeOffOverview(filters = {}) {
 
     const pending = await prisma.timeOffRequest.count({
       where: {
-        employeeId: { in: employeeIds },
+        ...employeeFilter,
         typeId: type.id,
         status: 'PENDING',
       },
@@ -353,7 +415,7 @@ async function getTimeOffOverview(filters = {}) {
     if (type.requiresAllocation) {
       const alloc = await prisma.timeOffAllocation.aggregate({
         where: {
-          employeeId: { in: employeeIds },
+          ...employeeFilter,
           typeId: type.id,
           status: 'APPROVED',
         },
@@ -380,6 +442,10 @@ async function getTimeOffOverview(filters = {}) {
  * Function G — getDepartmentOverview(filters)
  */
 async function getDepartmentOverview(filters = {}) {
+  if (!filters.period) {
+    filters.period = await getDefaultPeriod()
+  }
+
   const { start, end } = getPeriodRange(filters.period)
   const employeeIds = await getFilteredEmployeeIds(filters)
 
@@ -391,7 +457,7 @@ async function getDepartmentOverview(filters = {}) {
   for (const dept of departments) {
     const deptEmployees = await prisma.employee.findMany({
       where: {
-        id: { in: employeeIds },
+        ...(employeeIds.length > 0 && { id: { in: employeeIds } }),
         departmentId: dept.id,
       },
       select: { id: true },
@@ -473,15 +539,13 @@ async function getFilterOptions() {
     }
   })
 
-  // Always include current month
-  const now = new Date()
-  const currentMonthVal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
-  const currentMonthLabel = now.toLocaleDateString('en-IN', {
-    month: 'short',
-    year: 'numeric',
-  })
-  if (!periodOptions.some((p) => p.value === currentMonthVal)) {
-    periodOptions.unshift({ value: currentMonthVal, label: currentMonthLabel })
+  // Fallback to current month if no periods
+  if (periodOptions.length === 0) {
+    const now = new Date()
+    periodOptions.push({
+      value: `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`,
+      label: now.toLocaleDateString('en-IN', { month: 'short', year: 'numeric' }),
+    })
   }
 
   // Deduplicate
