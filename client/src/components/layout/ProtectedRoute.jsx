@@ -1,13 +1,15 @@
 import { Navigate } from 'react-router-dom'
 import useAuthStore from '../../store/authStore'
 
-export default function ProtectedRoute({ children, allowedRoles }) {
+export default function ProtectedRoute({ children, allowedRoles, redirectTo }) {
   const { isAuthenticated, user } = useAuthStore()
 
   if (!isAuthenticated) return <Navigate to="/login" replace />
 
   if (allowedRoles && !allowedRoles.includes(user?.role)) {
+    if (redirectTo) return <Navigate to={redirectTo} replace />
     return (
+
       <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
         <div className="text-6xl mb-4">🔒</div>
         <h2 className="text-2xl font-bold text-gray-800 mb-2">Access Restricted</h2>
