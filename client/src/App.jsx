@@ -28,6 +28,7 @@ import Payruns from './pages/payroll/Payruns'
 import PayrunDetail from './pages/payroll/PayrunDetail'
 import Payslips from './pages/payroll/Payslips'
 import PayslipDetail from './pages/payroll/PayslipDetail'
+import PayrollDashboard from './pages/payroll/PayrollDashboard'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
@@ -139,12 +140,15 @@ export default function App() {
             <Route path="time-off/requests/new" element={<TimeOffRequestForm />} />
             <Route path="time-off/requests/:id" element={<TimeOffRequestForm />} />
 
-            {/* Payroll Module (Phase 7) */}
+            {/* Payroll Module */}
             <Route
               path="payroll/dashboard"
               element={
-                <ProtectedRoute allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}>
-                  <ComingSoon title="Payroll Dashboard" />
+                <ProtectedRoute
+                  allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER', 'HR_MANAGER']}
+                  redirectTo="/payroll/payslips"
+                >
+                  <PayrollDashboard />
                 </ProtectedRoute>
               }
             />
