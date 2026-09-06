@@ -13,6 +13,7 @@ import {
   getBalance,
 } from '../../api/timeOff.api'
 import { employeesApi } from '../../api/employees.api'
+import api from '../../api/axios'
 import useAuthStore from '../../store/authStore'
 import BalanceBanner from '../../components/timeOff/BalanceBanner'
 import RefuseModal from '../../components/timeOff/RefuseModal'
@@ -62,6 +63,15 @@ export default function TimeOffRequestForm() {
   })
   const types = typesRes?.data || []
 
+  // Fetch own employee record if user.employee is missing
+  const { data: meRes } = useQuery({
+    queryKey: ['employee-me'],
+    queryFn: () => api.get('/employees/me').then(r => r.data?.data || r.data),
+    enabled: isEmployeeOnly,
+    staleTime: 300000,
+  })
+  const myEmployee = user?.employee || meRes || null
+
   // Fetch request detail if view mode
   const { data: reqRes, isLoading } = useQuery({
     queryKey: ['request', id],
@@ -82,8 +92,11 @@ export default function TimeOffRequestForm() {
       })
     } else if (isNew) {
       if (!formData.employeeId) {
-        if (isEmployeeOnly && user?.employee?.id) {
-          setFormData((prev) => ({ ...prev, employeeId: user.employee.id }))
+        if (isEmployeeOnly) {
+          const empId = user?.employee?.id || myEmployee?.id || ''
+          if (empId && !formData.employeeId) {
+            setFormData((prev) => ({ ...prev, employeeId: empId }))
+          }
         } else if (preselectedEmpId) {
           setFormData((prev) => ({ ...prev, employeeId: preselectedEmpId }))
         } else if (employees.length > 0) {
@@ -94,7 +107,7 @@ export default function TimeOffRequestForm() {
         setFormData((prev) => ({ ...prev, typeId: types[0].id }))
       }
     }
-  }, [reqData, employees, types, isNew, isEmployeeOnly, user, preselectedEmpId])
+  }, [reqData, employees, types, isNew, isEmployeeOnly, user, preselectedEmpId, myEmployee])
 
   const selectedType = types.find((t) => t.id === formData.typeId) || reqData?.type
   const unit = selectedType?.unit || 'DAYS'
@@ -286,7 +299,9 @@ export default function TimeOffRequestForm() {
                   <input
                     type="text"
                     disabled
-                    value={`${user?.employee?.firstName || ''} ${user?.employee?.lastName || ''}`}
+                    value={myEmployee
+                      ? `${myEmployee.firstName || ''} ${myEmployee.lastName || ''}`.trim()
+                      : 'Loading...'}
                     className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-800 font-semibold opacity-85"
                   />
                 ) : (

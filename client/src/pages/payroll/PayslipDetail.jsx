@@ -230,15 +230,14 @@ export default function PayslipDetail() {
               Payslip / {empName} / {payslip.payrun?.name || periodStr}
             </h1>
             <span
-              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
-                status === 'PAID'
+              className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${status === 'PAID'
                   ? 'bg-purple-50 text-purple-700 border-purple-200'
                   : status === 'DONE'
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                  : status === 'COMPUTED'
-                  ? 'bg-blue-50 text-blue-700 border-blue-200'
-                  : 'bg-gray-100 text-gray-700 border-gray-200'
-              }`}
+                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                    : status === 'COMPUTED'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-gray-100 text-gray-700 border-gray-200'
+                }`}
             >
               {status}
             </span>
@@ -256,11 +255,10 @@ export default function PayslipDetail() {
               id="payslip-compute-btn"
               onClick={() => computeMutation.mutate()}
               disabled={!canCompute || computeMutation.isPending}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition shadow-2xs ${
-                canCompute
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition shadow-2xs ${canCompute
                   ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-              }`}
+                }`}
             >
               {computeMutation.isPending ? (
                 <Loader2 size={14} className="animate-spin" />
@@ -277,11 +275,10 @@ export default function PayslipDetail() {
               id="payslip-mark-paid-btn"
               onClick={() => markPaidMutation.mutate()}
               disabled={!canMarkPaid || markPaidMutation.isPending}
-              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition shadow-2xs ${
-                canMarkPaid
+              className={`inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold rounded-lg transition shadow-2xs ${canMarkPaid
                   ? 'bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer'
                   : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'
-              }`}
+                }`}
             >
               {markPaidMutation.isPending ? (
                 <Loader2 size={14} className="animate-spin" />

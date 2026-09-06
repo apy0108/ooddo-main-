@@ -23,7 +23,7 @@ const authenticateToken = asyncHandler(async (req, res, next) => {
   if (!user) throw new AppError('User not found', 401)
   if (!user.isActive) throw new AppError('Account deactivated', 403)
 
-  req.user = { userId: user.id, role: user.role }
+  req.user = { id: user.id, userId: user.id, role: user.role }
   next()
 })
 

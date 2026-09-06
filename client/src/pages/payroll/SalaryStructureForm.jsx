@@ -471,9 +471,8 @@ export default function SalaryStructureForm() {
                         </td>
                         <td className="py-2.5 px-3">
                           <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${
-                              CATEGORY_BADGES[rule.category] || 'bg-gray-100 text-gray-700'
-                            }`}
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${CATEGORY_BADGES[rule.category] || 'bg-gray-100 text-gray-700'
+                              }`}
                           >
                             {rule.category}
                           </span>
@@ -576,17 +575,15 @@ export default function SalaryStructureForm() {
                           <td className="py-2.5 px-3 font-medium text-slate-200">{line.ruleName}</td>
                           <td className="py-2.5 px-3">
                             <span
-                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${
-                                CATEGORY_BADGES[line.category] || 'text-slate-300'
-                              }`}
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase ${CATEGORY_BADGES[line.category] || 'text-slate-300'
+                                }`}
                             >
                               {line.category}
                             </span>
                           </td>
                           <td
-                            className={`py-2.5 px-3 text-right font-bold ${
-                              isDeduction ? 'text-red-400' : 'text-slate-100'
-                            }`}
+                            className={`py-2.5 px-3 text-right font-bold ${isDeduction ? 'text-red-400' : 'text-slate-100'
+                              }`}
                           >
                             {isDeduction ? `-${formatINR(line.amount)}` : formatINR(line.amount)}
                           </td>

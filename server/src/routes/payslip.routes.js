@@ -99,7 +99,7 @@ router.get('/:id/download', async (req, res) => {
       where: { id: payslipId },
       include: {
         employee: { include: { user: true } },
-        payrun:   true,
+        payrun: true,
       }
     })
 

@@ -43,12 +43,14 @@ const getAvatarColor = (firstName = '') => {
 }
 
 export default function EmployeeDetail() {
-  const { id } = useParams()
+  const { id: paramId } = useParams()
+  const isMe = !paramId || paramId === 'me'
+  const id = isMe ? 'me' : paramId
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { user } = useAuthStore()
   const canDelete = user?.role === 'ADMIN'
-
+  const canEdit = !['EMPLOYEE'].includes(user?.role)
 
   const [activeTab, setActiveTab] = useState('work')
   const [isEditing, setIsEditing] = useState(false)
@@ -67,7 +69,7 @@ export default function EmployeeDetail() {
   // Fetch smart button counts
   const { data: countsRes } = useQuery({
     queryKey: ['employee-counts', id],
-    queryFn: () => employeesApi.getCounts(id),
+    queryFn: () => employeesApi.getCounts(id === 'me' ? 'me' : id),
   })
 
   const employee = employeeRes?.data
@@ -75,6 +77,7 @@ export default function EmployeeDetail() {
     timeOffRequests: 0,
     contracts: 0,
     attendance: 0,
+    payslips: 0,
   }
 
   // Dropdowns for edit mode
@@ -127,7 +130,7 @@ export default function EmployeeDetail() {
 
   // Update mutation
   const updateMutation = useMutation({
-    mutationFn: (payload) => employeesApi.update(id, payload),
+    mutationFn: (payload) => employeesApi.update(employee?.id || id, payload),
     onSuccess: () => {
       toast.success('Employee updated successfully')
       queryClient.invalidateQueries({ queryKey: ['employee', id] })
@@ -249,19 +252,25 @@ export default function EmployeeDetail() {
             label="Time Off"
             count={counts.timeOffRequests}
             icon={CalendarOff}
-            onClick={() => navigate(`/time-off/requests?employeeId=${id}`)}
+            onClick={() => navigate(`/time-off/requests?employeeId=${employee?.id || id}`)}
           />
           <SmartButton
             label="Contracts"
             count={counts.contracts}
             icon={FileText}
-            onClick={() => navigate(`/contracts?employeeId=${id}`)}
+            onClick={() => navigate(`/contracts?employeeId=${employee?.id || id}`)}
           />
           <SmartButton
             label="Attendance"
             count={counts.attendance}
             icon={Clock}
-            onClick={() => navigate(`/attendance?employeeId=${id}`)}
+            onClick={() => navigate(`/attendance?employeeId=${employee?.id || id}`)}
+          />
+          <SmartButton
+            label="Payslips"
+            count={counts.payslips}
+            icon={CreditCard}
+            onClick={() => navigate(`/payroll/payslips?employeeId=${employee?.id || id}`)}
           />
         </div>
       </div>
@@ -279,7 +288,7 @@ export default function EmployeeDetail() {
 
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-xl font-bold text-gray-900 tracking-tight truncate">
                   {fullName}
                 </h1>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-gray-100 text-gray-700 font-mono">
@@ -320,39 +329,41 @@ export default function EmployeeDetail() {
                 <span>Delete Employee</span>
               </button>
             )}
-            {!isEditing ? (
-              <button
-                type="button"
-                onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:border-[#205493] hover:text-[#205493] text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer"
-              >
-                <Edit2 size={13} />
-                <span>EDIT</span>
-              </button>
-            ) : (
-              <>
+            {canEdit && (
+              !isEditing ? (
                 <button
                   type="button"
-                  onClick={handleCancel}
-                  className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold rounded-lg transition cursor-pointer"
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-gray-200 text-gray-700 hover:border-[#205493] hover:text-[#205493] text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer"
                 >
-                  <X size={13} />
-                  <span>Cancel</span>
+                  <Edit2 size={13} />
+                  <span>EDIT</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={updateMutation.isPending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#205493] hover:bg-[#184275] text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer disabled:opacity-60"
-                >
-                  {updateMutation.isPending ? (
-                    <Loader2 size={13} className="animate-spin" />
-                  ) : (
-                    <Check size={13} />
-                  )}
-                  <span>SAVE</span>
-                </button>
-              </>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleCancel}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-semibold rounded-lg transition cursor-pointer"
+                  >
+                    <X size={13} />
+                    <span>Cancel</span>
+                  </button>
+                  <button
+                    type="submit"
+                    form="employee-form"
+                    disabled={updateMutation.isPending}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#205493] text-white hover:bg-[#1a4477] text-xs font-semibold rounded-lg shadow-2xs transition cursor-pointer disabled:opacity-50"
+                  >
+                    {updateMutation.isPending ? (
+                      <Loader2 size={13} className="animate-spin" />
+                    ) : (
+                      <Check size={13} />
+                    )}
+                    <span>SAVE</span>
+                  </button>
+                </>
+              )
             )}
           </div>
         </div>

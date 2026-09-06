@@ -56,8 +56,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/payroll/dashboard" replace />} />
-            <Route path="dashboard" element={<Navigate to="/payroll/dashboard" replace />} />
+            <Route index element={<Navigate to="/employees/me" replace />} />
+            <Route path="dashboard" element={<Navigate to="/employees/me" replace />} />
 
 
             {/* User Management */}
@@ -78,6 +78,10 @@ export default function App() {
                   <EmployeeList />
                 </ProtectedRoute>
               }
+            />
+            <Route
+              path="employees/me"
+              element={<EmployeeDetail />}
             />
             <Route
               path="employees/:id"

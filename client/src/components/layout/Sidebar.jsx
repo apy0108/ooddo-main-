@@ -13,6 +13,7 @@ import {
   LogOut,
   FileText,
   CalendarClock,
+  User,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import api from '../../api/axios'
@@ -35,6 +36,7 @@ export default function Sidebar() {
   const isEmployeeOnly = role === 'EMPLOYEE'
   const canAccessPayroll = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(role)
   const isAdmin = role === 'ADMIN'
+  const isEmployee = role === 'EMPLOYEE'
 
   const handleLogout = async () => {
     try {
@@ -96,7 +98,12 @@ export default function Sidebar() {
               <span>Attendance</span>
             </NavLink>
 
-            {!isEmployeeOnly && (
+            {isEmployee ? (
+              <NavLink to="/employees/me" className={navLinkClass}>
+                <User size={17} />
+                <span>My Profile</span>
+              </NavLink>
+            ) : (
               <>
                 <NavLink to="/employees" className={navLinkClass}>
                   <Users size={17} />
@@ -109,12 +116,17 @@ export default function Sidebar() {
               </>
             )}
 
-            {canAccessPayroll && (
+            {isEmployee ? (
+              <NavLink to="/payroll/payslips" className={navLinkClass}>
+                <Wallet size={17} />
+                <span>My Payslips</span>
+              </NavLink>
+            ) : canAccessPayroll ? (
               <NavLink to="/payroll/payruns" className={navLinkClass}>
                 <Wallet size={17} />
                 <span>Payroll</span>
               </NavLink>
-            )}
+            ) : null}
           </div>
         </div>
 
