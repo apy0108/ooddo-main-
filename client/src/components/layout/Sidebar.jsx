@@ -34,7 +34,7 @@ export default function Sidebar() {
 
   const role = user?.role || 'EMPLOYEE'
   const isEmployeeOnly = role === 'EMPLOYEE'
-  const canAccessPayroll = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(role)
+  const canAccessPayroll = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(role)
   const isAdmin = role === 'ADMIN'
   const isEmployee = role === 'EMPLOYEE'
 

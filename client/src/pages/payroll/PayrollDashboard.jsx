@@ -179,9 +179,9 @@ export default function PayrollDashboard() {
       {/* ── Page Header ── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Payroll Dashboard</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-gray-900">Overview Dashboard</h1>
           <p className="text-xs text-gray-500 mt-1 max-w-3xl">
-            Understand payments, staffing impact, leave patterns, and attendance quality for the selected period.
+            Executive overview of salary distribution, department headcount, attendance health, and leave trends.
           </p>
         </div>
       </div>

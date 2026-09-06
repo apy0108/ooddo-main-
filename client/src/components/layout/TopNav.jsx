@@ -28,7 +28,7 @@ export default function TopNav() {
   const [payrollOpen, setPayrollOpen] = useState(false)
   const payrollDropdownRef = useRef(null)
 
-  const isPayroll = ['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
+  const isPayroll = ['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER'].includes(
     user?.role
   )
 

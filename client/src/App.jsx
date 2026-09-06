@@ -32,10 +32,19 @@ import PayrollDashboard from './pages/payroll/PayrollDashboard'
 import ComingSoon from './pages/ComingSoon'
 import NotFound from './pages/NotFound'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import useAuthStore from './store/authStore'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: 1, staleTime: 30000 } }
 })
+
+function MainOverviewDashboard() {
+  const { user } = useAuthStore()
+  if (user?.role === 'EMPLOYEE') {
+    return <EmployeeDetail />
+  }
+  return <PayrollDashboard />
+}
 
 export default function App() {
   return (
@@ -56,8 +65,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            <Route index element={<Navigate to="/employees/me" replace />} />
-            <Route path="dashboard" element={<Navigate to="/employees/me" replace />} />
+            <Route index element={<MainOverviewDashboard />} />
+            <Route path="dashboard" element={<MainOverviewDashboard />} />
 
 
             {/* User Management */}
@@ -150,7 +159,7 @@ export default function App() {
               path="payroll/dashboard"
               element={
                 <ProtectedRoute
-                  allowedRoles={['ADMIN', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}
+                  allowedRoles={['ADMIN', 'HR_MANAGER', 'HR_PAYROLL_MANAGER', 'HR_PAYROLL_USER']}
                   redirectTo="/payroll/payslips"
                 >
                   <PayrollDashboard />
